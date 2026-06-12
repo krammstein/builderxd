@@ -738,12 +738,18 @@ ${fontLinks}
           if (!toolbar) {
             toolbar = document.createElement('div');
             toolbar.id = 'builder-inline-toolbar';
-            toolbar.style.cssText = 'position: absolute; display: none; background: #1f2937; color: white; flex-direction: column; gap: 6px; padding: 6px; border-radius: 6px; z-index: 99999; font-size: 11px; font-family: system-ui, sans-serif; pointer-events: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.25); border: 1px solid #374151;';
+            toolbar.style.cssText = 'position: absolute; display: none; background: #1f2937; color: white; flex-direction: column; gap: 4px; padding: 4px; border-radius: 6px; z-index: 99999; font-size: 11px; font-family: system-ui, sans-serif; pointer-events: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.25); border: 1px solid #374151;';
             toolbar.innerHTML = 
-              '<div class="tb-row" style="display:flex; align-items:center; gap:6px;">' +
-              '  <span id="tb-drag" style="cursor: move; padding: 2px 4px; user-select: none;" title="Mover">☰</span>' +
-              '  <button id="tb-clone" type="button" style="cursor: pointer; padding: 2px 6px; background: transparent; border: none; color: #d1d5db; font-size: 11px; font-weight: bold; border-radius:3px;" title="Duplicar">❐</button>' +
-              '  <button id="tb-delete" type="button" style="cursor: pointer; padding: 2px 6px; background: #ef4444; border: none; color: white; font-size: 11px; font-weight: bold; border-radius: 3px;" title="Eliminar">🗑</button>' +
+              '<div class="tb-row" style="display:flex; align-items:center; gap:4px; padding: 2px;">' +
+              '  <div id="tb-drag" class="tb-icon-btn" style="cursor: move;" title="Mover">' +
+              '    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>' +
+              '  </div>' +
+              '  <button id="tb-clone" type="button" class="tb-icon-btn" title="Duplicar">' +
+              '    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>' +
+              '  </button>' +
+              '  <button id="tb-delete" type="button" class="tb-icon-btn" id="tb-delete" style="color: #ef4444;" title="Eliminar">' +
+              '    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>' +
+              '  </button>' +
               '</div>';
             document.body.appendChild(toolbar);
 
@@ -752,7 +758,10 @@ ${fontLinks}
             styles.innerHTML = 
               '.tb-btn { background: transparent; border: none; color: #d1d5db; padding: 3px 6px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold; display: flex; align-items: center; justify-content: center; transition: all 0.1s ease; }' +
               '.tb-btn:hover { background: #374151; color: white; }' +
-              '.tb-btn.active { background: #4f46e5; color: white; }';
+              '.tb-btn.active { background: #4f46e5; color: white; }' +
+              '.tb-icon-btn { background: transparent; border: none; color: #9ca3af; padding: 4px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s ease; width: 22px; height: 22px; }' +
+              '.tb-icon-btn:hover { background: #374151; color: #ffffff; }' +
+              '.tb-icon-btn#tb-delete:hover { background: #ef4444; color: #ffffff; }';
             document.head.appendChild(styles);
 
             toolbar.addEventListener('click', (e) => e.stopPropagation());
