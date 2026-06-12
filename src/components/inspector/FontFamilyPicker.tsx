@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CustomSelect } from './CustomSelect';
 import type { SelectOption } from './CustomSelect';
 import { Search } from 'lucide-react';
@@ -7,6 +7,7 @@ interface FontFamilyPickerProps {
   value: string;
   onChange: (font: string) => void;
   disabled?: boolean;
+  googleFonts?: string[];
 }
 
 const WEB_SAFE_FONTS = [
@@ -19,7 +20,7 @@ const WEB_SAFE_FONTS = [
   'Trebuchet MS',
 ];
 
-const GOOGLE_FONTS = [
+const DEFAULT_GOOGLE_FONTS = [
   'Inter',
   'Roboto',
   'Outfit',
@@ -30,18 +31,47 @@ const GOOGLE_FONTS = [
   'Nunito',
   'Raleway',
   'Playfair Display',
+  'Merriweather',
+  'Lora',
+  'Oswald',
+  'Roboto Condensed',
+  'Source Sans Pro',
+  'PT Sans',
+  'Noto Sans',
+  'Rubik',
+  'Kanit',
+  'Work Sans',
+  'Quicksand',
 ];
 
 export const FontFamilyPicker: React.FC<FontFamilyPickerProps> = ({
   value,
   onChange,
   disabled = false,
+  googleFonts,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
 
+  const activeGoogleFonts = googleFonts || DEFAULT_GOOGLE_FONTS;
+
+  // Dynamically load Google Fonts stylesheet so the dropdown previews render correctly
+  useEffect(() => {
+    if (activeGoogleFonts.length === 0) return;
+    const linkId = 'gfonts-picker-preview';
+    let link = document.getElementById(linkId) as HTMLLinkElement;
+    if (!link) {
+      link = document.createElement('link');
+      link.id = linkId;
+      link.rel = 'stylesheet';
+      document.head.appendChild(link);
+    }
+    const fontFamilies = activeGoogleFonts.map(f => f.replace(/\s+/g, '+')).join('|');
+    link.href = `https://fonts.googleapis.com/css?family=${fontFamilies}&display=swap`;
+  }, [activeGoogleFonts]);
+
   const allFonts = [
     ...WEB_SAFE_FONTS.map(f => ({ label: f, value: f, group: 'Web-safe' })),
-    ...GOOGLE_FONTS.map(f => ({ label: f, value: f, group: 'Google Fonts' })),
+    ...activeGoogleFonts.map(f => ({ label: f, value: f, group: 'Google Fonts' })),
   ];
 
   const filteredFonts = allFonts.filter(f =>
@@ -86,3 +116,4 @@ export const FontFamilyPicker: React.FC<FontFamilyPickerProps> = ({
     </div>
   );
 };
+

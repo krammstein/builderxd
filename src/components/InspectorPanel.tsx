@@ -23,6 +23,7 @@ interface InspectorPanelProps {
   onDeleteNode: (id: string) => void;
   readOnly?: boolean;
   onOpenAssetManager?: (currentUrl: string, onSelect: (url: string) => void) => void;
+  googleFonts?: string[];
 }
 
 export const InspectorPanel: React.FC<InspectorPanelProps> = ({
@@ -30,7 +31,8 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
   onUpdateProperties,
   onDeleteNode,
   readOnly = false,
-  onOpenAssetManager
+  onOpenAssetManager,
+  googleFonts
 }) => {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'general' | 'mobile'>('general');
@@ -204,7 +206,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             )}
             <div className="flex flex-col gap-1.5">
               {renderLabel('Tipografía', 'fontFamily')}
-              <FontFamilyPicker value={p.fontFamily || 'Arial'} onChange={(val) => handleChange('fontFamily', val)} disabled={readOnly} />
+              <FontFamilyPicker value={p.fontFamily || 'Arial'} onChange={(val) => handleChange('fontFamily', val)} disabled={readOnly} googleFonts={googleFonts} />
             </div>
             <div className="flex flex-col gap-1.5">
               {renderLabel('Tamaño de Texto', 'fontSize')}
@@ -612,7 +614,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             </div>
             <div className="flex flex-col gap-1.5">
               {renderLabel('Tipografía', 'fontFamily')}
-              <FontFamilyPicker value={p.fontFamily || 'Arial'} onChange={(val) => handleChange('fontFamily', val)} disabled={readOnly} />
+              <FontFamilyPicker value={p.fontFamily || 'Arial'} onChange={(val) => handleChange('fontFamily', val)} disabled={readOnly} googleFonts={googleFonts} />
             </div>
             <div className="flex flex-col gap-1.5">
               {renderLabel('Tamaño de Texto', 'fontSize')}
@@ -681,7 +683,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             </div>
             <div className="flex flex-col gap-1.5">
               {renderLabel('Tipografía', 'fontFamily')}
-              <FontFamilyPicker value={p.fontFamily || 'Arial'} onChange={(val) => handleChange('fontFamily', val)} disabled={readOnly} />
+              <FontFamilyPicker value={p.fontFamily || 'Arial'} onChange={(val) => handleChange('fontFamily', val)} disabled={readOnly} googleFonts={googleFonts} />
             </div>
             <div className="flex flex-col gap-1.5">
               {renderLabel('Tamaño de Texto', 'fontSize')}

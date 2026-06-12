@@ -1,9 +1,46 @@
 import type { BlockNode } from '../types';
 
+const WEB_SAFE_FONTS = [
+  'arial',
+  'georgia',
+  'verdana',
+  'tahoma',
+  'times new roman',
+  'courier new',
+  'trebuchet ms',
+  'sans-serif',
+  'serif',
+  'monospace',
+  'system-ui',
+  '-apple-system'
+];
+
+const getUsedFonts = (nodes: BlockNode[]): string[] => {
+  const fonts = new Set<string>();
+  const traverse = (node: BlockNode) => {
+    if (node.properties?.fontFamily) {
+      fonts.add(node.properties.fontFamily);
+    }
+    if (node.children) {
+      node.children.forEach(traverse);
+    }
+  };
+  nodes.forEach(traverse);
+  return Array.from(fonts);
+};
 
 // Converts the JSON tree structure into standard MJML
 export const compileToMJML = (nodes: BlockNode[]): string => {
-  let mjml = '<mjml>\n  <mj-head>\n    <mj-attributes>\n      <mj-all font-family="system-ui, -apple-system, sans-serif" />\n    </mj-attributes>\n  </mj-head>\n  <mj-body>\n';
+  const usedFonts = getUsedFonts(nodes);
+  const googleFontsUsed = usedFonts.filter(f => !WEB_SAFE_FONTS.includes(f.toLowerCase()));
+  
+  let fontTags = '';
+  googleFontsUsed.forEach(font => {
+    const encoded = font.replace(/\s+/g, '+');
+    fontTags += `    <mj-font name="${font}" href="https://fonts.googleapis.com/css?family=${encoded}" />\n`;
+  });
+
+  let mjml = `<mjml>\n  <mj-head>\n${fontTags}    <mj-attributes>\n      <mj-all font-family="system-ui, -apple-system, sans-serif" />\n    </mj-attributes>\n  </mj-head>\n  <mj-body>\n`;
 
   const renderNode = (node: BlockNode, indent: string = '    '): string => {
     const props = node.properties;
@@ -41,7 +78,8 @@ export const compileToMJML = (nodes: BlockNode[]): string => {
         const size = styleAttr('fontSize', 'font-size');
         const align = styleAttr('align', 'align');
         const pad = styleAttr('padding', 'padding');
-        return `${indent}<mj-text${color}${size}${align}${pad}>${props.content || ''}</mj-text>\n`;
+        const font = styleAttr('fontFamily', 'font-family');
+        return `${indent}<mj-text${color}${size}${align}${pad}${font}>${props.content || ''}</mj-text>\n`;
       }
       case 'image': {
         const src = props.url ? ` src="${props.url}"` : ' src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=60"';
@@ -58,7 +96,8 @@ export const compileToMJML = (nodes: BlockNode[]): string => {
         const radius = styleAttr('borderRadius', 'border-radius');
         const pad = styleAttr('padding', 'padding');
         const align = styleAttr('align', 'align');
-        return `${indent}<mj-button${href}${bg}${color}${radius}${pad}${align}>${props.content || ''}</mj-button>\n`;
+        const font = styleAttr('fontFamily', 'font-family');
+        return `${indent}<mj-button${href}${bg}${color}${radius}${pad}${align}${font}>${props.content || ''}</mj-button>\n`;
       }
       case 'divider': {
         const color = styleAttr('color', 'border-color');
@@ -251,13 +290,14 @@ export const compileToHTML = (
         `;
       }
       case 'text': {
+        const font = getResponsiveStyle(node, 'fontFamily', 'Arial');
         const color = getResponsiveStyle(node, 'color', '#1a1a1a');
         const fontSize = getResponsiveStyle(node, 'fontSize', '16px');
         const align = getResponsiveStyle(node, 'align', 'left');
         const padding = getResponsiveStyle(node, 'padding', '10px 20px');
         const content = node.properties.content || 'Escribe aquí tu texto...';
         return `
-          <div data-id="${node.id}" class="builder-element${isSelectedClass}" style="color: ${color}; font-size: ${fontSize}; text-align: ${align}; padding: ${padding}; line-height: 1.5; font-family: system-ui, -apple-system, sans-serif; box-sizing: border-box;">
+          <div data-id="${node.id}" class="builder-element${isSelectedClass}" style="color: ${color}; font-size: ${fontSize}; text-align: ${align}; padding: ${padding}; line-height: 1.5; font-family: ${font}; box-sizing: border-box;">
             ${content}
           </div>
         `;
@@ -275,6 +315,7 @@ export const compileToHTML = (
         `;
       }
       case 'button': {
+        const font = getResponsiveStyle(node, 'fontFamily', 'Arial');
         const bg = getResponsiveStyle(node, 'backgroundColor', '#4F46E5');
         const color = getResponsiveStyle(node, 'color', '#ffffff');
         const radius = formatRadius(getResponsiveStyle(node, 'borderRadius', '6px'));
@@ -284,7 +325,7 @@ export const compileToHTML = (
         const url = node.properties.url || '#';
         return `
           <div data-id="${node.id}" class="builder-element${isSelectedClass}" style="text-align: ${align}; padding: 10px 20px; box-sizing: border-box;">
-            <a href="${url}" style="background-color: ${bg}; color: ${color}; border-radius: ${radius}; padding: ${padding}; display: inline-block; text-decoration: none; font-weight: 500; font-family: system-ui, -apple-system, sans-serif;" target="_blank">
+            <a href="${url}" style="background-color: ${bg}; color: ${color}; border-radius: ${radius}; padding: ${padding}; display: inline-block; text-decoration: none; font-weight: 500; font-family: ${font};" target="_blank">
               ${content}
             </a>
           </div>
@@ -517,6 +558,15 @@ export const compileToHTML = (
 
   const bodyHtml = nodes.map(renderNode).join('');
 
+  const usedFonts = getUsedFonts(nodes);
+  const googleFontsUsed = usedFonts.filter(f => !WEB_SAFE_FONTS.includes(f.toLowerCase()));
+  
+  let fontLinks = '';
+  googleFontsUsed.forEach(font => {
+    const encoded = font.replace(/\s+/g, '+');
+    fontLinks += `      <link href="https://fonts.googleapis.com/css2?family=${encoded}:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />\n`;
+  });
+
   return `
     <!DOCTYPE html>
     <html lang="es">
@@ -524,6 +574,7 @@ export const compileToHTML = (
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <title>Email Preview</title>
+${fontLinks}
       <style>
         body {
           margin: 0;

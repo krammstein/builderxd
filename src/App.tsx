@@ -30,6 +30,7 @@ export interface AppProps {
   uiConfig?: UIConfig;
   assetManagerComponent?: React.ReactNode;
   confirmClearPrompt?: string;
+  googleFonts?: string[];
 }
 
 
@@ -171,7 +172,8 @@ const App = forwardRef<any, AppProps>(({
   espIntegrations = [],
   uiConfig,
   assetManagerComponent,
-  confirmClearPrompt
+  confirmClearPrompt,
+  googleFonts
 }, ref) => {
   const { t } = useTranslation();
   const { setTheme } = useTheme();
@@ -961,6 +963,7 @@ const App = forwardRef<any, AppProps>(({
           onUpdateProperties={handleUpdateProperties}
           onDeleteNode={handleDeleteNode}
           readOnly={readOnly}
+          googleFonts={googleFonts}
           onOpenAssetManager={(_currentUrl, onSelect) => {
             if (assetManagerComponent) {
               setCurrentAssetCallback(() => onSelect);
