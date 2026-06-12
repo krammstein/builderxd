@@ -9,6 +9,7 @@ interface CanvasProps {
   onDeleteNode?: (id: string) => void;
   onCloneNode?: (id: string) => void;
   onUpdateNodeContent?: (id: string, content: string) => void;
+  onUpdateNodeProperties?: (id: string, properties: Record<string, any>) => void;
 }
 
 export const Canvas: React.FC<CanvasProps> = ({
@@ -18,7 +19,8 @@ export const Canvas: React.FC<CanvasProps> = ({
   onDropElement,
   onDeleteNode,
   onCloneNode,
-  onUpdateNodeContent
+  onUpdateNodeContent,
+  onUpdateNodeProperties
 }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const lastHtmlRef = useRef<string>('');
@@ -37,6 +39,8 @@ export const Canvas: React.FC<CanvasProps> = ({
           onCloneNode?.(event.data.id);
         } else if (event.data.type === 'UPDATE_CONTENT') {
           onUpdateNodeContent?.(event.data.id, event.data.content);
+        } else if (event.data.type === 'UPDATE_PROPERTIES') {
+          onUpdateNodeProperties?.(event.data.id, event.data.properties);
         }
       }
     };
@@ -45,7 +49,7 @@ export const Canvas: React.FC<CanvasProps> = ({
     return () => {
       window.removeEventListener('message', handleIframeMessage);
     };
-  }, [onSelectNode, onDropElement, onDeleteNode, onCloneNode, onUpdateNodeContent]);
+  }, [onSelectNode, onDropElement, onDeleteNode, onCloneNode, onUpdateNodeContent, onUpdateNodeProperties]);
 
   // Apply DOM patching or reload srcdoc programmatically
   useEffect(() => {

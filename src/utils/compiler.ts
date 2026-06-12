@@ -73,13 +73,21 @@ export const compileToMJML = (nodes: BlockNode[]): string => {
         content += `${indent}</mj-column>\n`;
         return content;
       }
-      case 'text': {
+      case 'text':
+      case 'heading1':
+      case 'heading2':
+      case 'heading3':
+      case 'heading4':
+      case 'paragraph': {
         const color = styleAttr('color', 'color');
         const size = styleAttr('fontSize', 'font-size');
         const align = styleAttr('align', 'align');
         const pad = styleAttr('padding', 'padding');
         const font = styleAttr('fontFamily', 'font-family');
-        return `${indent}<mj-text${color}${size}${align}${pad}${font}>${props.content || ''}</mj-text>\n`;
+        const weight = styleAttr('fontWeight', 'font-weight');
+        const style = styleAttr('fontStyle', 'font-style');
+        const decoration = styleAttr('textDecoration', 'text-decoration');
+        return `${indent}<mj-text${color}${size}${align}${pad}${font}${weight}${style}${decoration}>${props.content || ''}</mj-text>\n`;
       }
       case 'image': {
         const src = props.url ? ` src="${props.url}"` : ' src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=60"';
@@ -289,15 +297,25 @@ export const compileToHTML = (
           </div>
         `;
       }
-      case 'text': {
+      case 'text':
+      case 'heading1':
+      case 'heading2':
+      case 'heading3':
+      case 'heading4':
+      case 'paragraph': {
         const font = getResponsiveStyle(node, 'fontFamily', 'Arial');
         const color = getResponsiveStyle(node, 'color', '#1a1a1a');
         const fontSize = getResponsiveStyle(node, 'fontSize', '16px');
         const align = getResponsiveStyle(node, 'align', 'left');
         const padding = getResponsiveStyle(node, 'padding', '10px 20px');
+        const margin = getResponsiveStyle(node, 'margin', '0px');
+        const borderRadius = getResponsiveStyle(node, 'borderRadius', '0px');
+        const fontWeight = getResponsiveStyle(node, 'fontWeight', node.type.startsWith('heading') ? 'bold' : 'normal');
+        const fontStyle = getResponsiveStyle(node, 'fontStyle', 'normal');
+        const textDecoration = getResponsiveStyle(node, 'textDecoration', 'none');
         const content = node.properties.content || 'Escribe aquí tu texto...';
         return `
-          <div data-id="${node.id}" class="builder-element${isSelectedClass}" style="color: ${color}; font-size: ${fontSize}; text-align: ${align}; padding: ${padding}; line-height: 1.5; font-family: ${font}; box-sizing: border-box;">
+          <div data-id="${node.id}" class="builder-element${isSelectedClass}" style="color: ${color}; font-size: ${fontSize}; text-align: ${align}; padding: ${padding}; margin: ${margin}; border-radius: ${borderRadius}; line-height: 1.5; font-family: ${font}; font-weight: ${fontWeight}; font-style: ${fontStyle}; text-decoration: ${textDecoration}; box-sizing: border-box;">
             ${content}
           </div>
         `;
@@ -634,7 +652,12 @@ ${fontLinks}
         /* Specify labels based on data-id prefix */
         [data-id^="section-"]::before { content: "Sección"; }
         [data-id^="column-"]::before { content: "Columna"; }
-        [data-id^="text-"]::before { content: "Texto"; }
+        [data-id^="text-"]::before { content: "Texto Libre"; }
+        [data-id^="heading1-"]::before { content: "Título H1"; }
+        [data-id^="heading2-"]::before { content: "Título H2"; }
+        [data-id^="heading3-"]::before { content: "Título H3"; }
+        [data-id^="heading4-"]::before { content: "Subtítulo H4"; }
+        [data-id^="paragraph-"]::before { content: "Párrafo"; }
         [data-id^="image-"]::before { content: "Imagen"; }
         [data-id^="button-"]::before { content: "Botón"; }
         [data-id^="divider-"]::before { content: "Divisor"; }
@@ -705,11 +728,15 @@ ${fontLinks}
           }
           const el = e.target.closest('[data-id]');
           if (el) {
-            e.preventDefault();
+            const id = el.getAttribute('data-id');
+            const isText = id.startsWith('text-') || id.startsWith('button-') || id.startsWith('heading') || id.startsWith('paragraph');
+            if (!isText) {
+              e.preventDefault();
+            }
             e.stopPropagation();
             window.parent.postMessage({
               type: 'SELECT_ELEMENT',
-              id: el.getAttribute('data-id')
+              id: id
             }, '*');
           }
         }, true);
@@ -720,12 +747,22 @@ ${fontLinks}
           if (!toolbar) {
             toolbar = document.createElement('div');
             toolbar.id = 'builder-inline-toolbar';
-            toolbar.style.cssText = 'position: absolute; display: none; background: #4F46E5; color: white; gap: 4px; padding: 2px 5px; border-radius: 4px; z-index: 99999; font-size: 11px; font-family: system-ui, sans-serif; font-weight: bold; pointer-events: auto; align-items: center; box-shadow: 0 2px 6px rgba(0,0,0,0.15);';
+            toolbar.style.cssText = 'position: absolute; display: none; background: #1f2937; color: white; flex-direction: column; gap: 6px; padding: 6px; border-radius: 6px; z-index: 99999; font-size: 11px; font-family: system-ui, sans-serif; pointer-events: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.25); border: 1px solid #374151;';
             toolbar.innerHTML = 
-              '<span id="tb-drag" style="cursor: move; padding: 2px 4px; user-select: none;" title="Mover">☰</span>' +
-              '<button id="tb-clone" type="button" style="cursor: pointer; padding: 2px 4px; background: transparent; border: none; color: white; font-size: 11px; font-weight: bold;" title="Duplicar">❐</button>' +
-              '<button id="tb-delete" type="button" style="cursor: pointer; padding: 2px 4px; background: #ef4444; border: none; color: white; font-size: 11px; font-weight: bold; border-radius: 2px;" title="Eliminar">🗑</button>';
+              '<div class="tb-row" style="display:flex; align-items:center; gap:6px;">' +
+              '  <span id="tb-drag" style="cursor: move; padding: 2px 4px; user-select: none;" title="Mover">☰</span>' +
+              '  <button id="tb-clone" type="button" style="cursor: pointer; padding: 2px 6px; background: transparent; border: none; color: #d1d5db; font-size: 11px; font-weight: bold; border-radius:3px;" title="Duplicar">❐</button>' +
+              '  <button id="tb-delete" type="button" style="cursor: pointer; padding: 2px 6px; background: #ef4444; border: none; color: white; font-size: 11px; font-weight: bold; border-radius: 3px;" title="Eliminar">🗑</button>' +
+              '</div>';
             document.body.appendChild(toolbar);
+
+            // Style hover transitions
+            const styles = document.createElement('style');
+            styles.innerHTML = 
+              '.tb-btn { background: transparent; border: none; color: #d1d5db; padding: 3px 6px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold; display: flex; align-items: center; justify-content: center; transition: all 0.1s ease; }' +
+              '.tb-btn:hover { background: #374151; color: white; }' +
+              '.tb-btn.active { background: #4f46e5; color: white; }';
+            document.head.appendChild(styles);
 
             toolbar.addEventListener('click', (e) => e.stopPropagation());
 
@@ -747,14 +784,17 @@ ${fontLinks}
             const scrollX = window.scrollX || document.documentElement.scrollLeft;
 
             // Positioning toolbar right above selected element
-            toolbar.style.top = (rect.top + scrollY - 26) + 'px';
+            toolbar.style.top = (rect.top + scrollY - (selected.getAttribute('data-id') && (selected.getAttribute('data-id').startsWith('text-') || selected.getAttribute('data-id').startsWith('heading') || selected.getAttribute('data-id').startsWith('paragraph') || selected.getAttribute('data-id').startsWith('button-')) ? 55 : 32)) + 'px';
             toolbar.style.left = (rect.left + scrollX) + 'px';
             toolbar.style.display = 'flex';
             toolbar.setAttribute('data-target-id', selected.getAttribute('data-id'));
 
-            // If the element has text contents, make it contenteditable inline
+            // Check if it is a text-editing node
             const id = selected.getAttribute('data-id');
-            if (id && (id.startsWith('text-') || id.startsWith('button-'))) {
+            const isText = id && (id.startsWith('text-') || id.startsWith('button-') || id.startsWith('heading') || id.startsWith('paragraph'));
+            let formatRow = document.getElementById('tb-format-row');
+
+            if (isText) {
               selected.setAttribute('contenteditable', 'true');
               selected.style.outline = 'none';
 
@@ -764,9 +804,85 @@ ${fontLinks}
                   window.parent.postMessage({
                     type: 'UPDATE_CONTENT',
                     id,
-                    content: selected.innerText // Plain text only as required
+                    content: selected.innerText // Plain text only
                   }, '*');
                 });
+              }
+
+              if (!formatRow) {
+                formatRow = document.createElement('div');
+                formatRow.id = 'tb-format-row';
+                formatRow.style.cssText = 'display: flex; gap: 4px; border-top: 1px solid #374151; padding-top: 4px; margin-top: 2px; align-items: center;';
+                toolbar.appendChild(formatRow);
+              }
+
+              const isB = selected.style.fontWeight === 'bold' || selected.style.fontWeight === '700';
+              const isI = selected.style.fontStyle === 'italic';
+              const isU = selected.style.textDecoration.includes('underline');
+              const textAlign = selected.style.textAlign || 'left';
+              const activeFont = selected.style.fontFamily || 'Arial';
+              const activeSize = selected.style.fontSize || '16px';
+
+              const fontsList = ['Arial', 'Georgia', 'Verdana', 'Tahoma', 'Times New Roman', 'Courier New', 'Trebuchet MS', 'Inter', 'Roboto', 'Outfit', 'Poppins', 'Lato', 'Montserrat', 'Open Sans', 'Nunito', 'Raleway', 'Playfair Display'];
+              const fontOptions = fontsList.map(f => '<option value="' + f + '"' + (activeFont.includes(f) ? ' selected' : '') + '>' + f + '</option>').join('');
+
+              formatRow.innerHTML = 
+                '<button type="button" class="tb-btn' + (isB ? ' active' : '') + '" id="tb-bold" style="font-weight:bold;">B</button>' +
+                '<button type="button" class="tb-btn' + (isI ? ' active' : '') + '" id="tb-italic" style="font-style:italic;">I</button>' +
+                '<button type="button" class="tb-btn' + (isU ? ' active' : '') + '" id="tb-underline" style="text-decoration:underline;">U</button>' +
+                '<select id="tb-font-family" style="background:#374151;color:white;border:1px solid #4b5563;font-size:10px;border-radius:3px;padding:2px 4px;max-width:85px;outline:none;cursor:pointer;">' + fontOptions + '</select>' +
+                '<input type="text" id="tb-font-size" style="background:#374151;color:white;border:1px solid #4b5563;font-size:10px;border-radius:3px;padding:2px 4px;width:38px;outline:none;text-align:center;" value="' + activeSize + '" />' +
+                '<button type="button" class="tb-btn' + (textAlign === 'left' ? ' active' : '') + '" id="tb-align-left" title="Izquierda">⬅</button>' +
+                '<button type="button" class="tb-btn' + (textAlign === 'center' ? ' active' : '') + '" id="tb-align-center" title="Centro">↔</button>' +
+                '<button type="button" class="tb-btn' + (textAlign === 'right' ? ' active' : '') + '" id="tb-align-right" title="Derecha">➡</button>';
+
+              // Listeners
+              formatRow.querySelector('#tb-bold').onclick = () => {
+                const nextVal = (selected.style.fontWeight === 'bold' || selected.style.fontWeight === '700') ? 'normal' : 'bold';
+                selected.style.fontWeight = nextVal;
+                window.parent.postMessage({ type: 'UPDATE_PROPERTIES', id, properties: { fontWeight: nextVal } }, '*');
+                updateToolbar();
+              };
+              formatRow.querySelector('#tb-italic').onclick = () => {
+                const nextVal = selected.style.fontStyle === 'italic' ? 'normal' : 'italic';
+                selected.style.fontStyle = nextVal;
+                window.parent.postMessage({ type: 'UPDATE_PROPERTIES', id, properties: { fontStyle: nextVal } }, '*');
+                updateToolbar();
+              };
+              formatRow.querySelector('#tb-underline').onclick = () => {
+                const nextVal = selected.style.textDecoration.includes('underline') ? 'none' : 'underline';
+                selected.style.textDecoration = nextVal;
+                window.parent.postMessage({ type: 'UPDATE_PROPERTIES', id, properties: { textDecoration: nextVal } }, '*');
+                updateToolbar();
+              };
+              formatRow.querySelector('#tb-font-family').onchange = (e) => {
+                const nextVal = e.target.value;
+                selected.style.fontFamily = nextVal;
+                window.parent.postMessage({ type: 'UPDATE_PROPERTIES', id, properties: { fontFamily: nextVal } }, '*');
+              };
+              formatRow.querySelector('#tb-font-size').onchange = (e) => {
+                const nextVal = e.target.value;
+                selected.style.fontSize = nextVal;
+                window.parent.postMessage({ type: 'UPDATE_PROPERTIES', id, properties: { fontSize: nextVal } }, '*');
+              };
+              formatRow.querySelector('#tb-align-left').onclick = () => {
+                selected.style.textAlign = 'left';
+                window.parent.postMessage({ type: 'UPDATE_PROPERTIES', id, properties: { align: 'left' } }, '*');
+                updateToolbar();
+              };
+              formatRow.querySelector('#tb-align-center').onclick = () => {
+                selected.style.textAlign = 'center';
+                window.parent.postMessage({ type: 'UPDATE_PROPERTIES', id, properties: { align: 'center' } }, '*');
+                updateToolbar();
+              };
+              formatRow.querySelector('#tb-align-right').onclick = () => {
+                selected.style.textAlign = 'right';
+                window.parent.postMessage({ type: 'UPDATE_PROPERTIES', id, properties: { align: 'right' } }, '*');
+                updateToolbar();
+              };
+            } else {
+              if (formatRow) {
+                formatRow.remove();
               }
             }
           } else {

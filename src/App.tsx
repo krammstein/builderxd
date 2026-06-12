@@ -474,7 +474,58 @@ const App = forwardRef<any, AppProps>(({
           fontSize: '16px',
           align: 'left',
           padding: '10px 20px',
-          fontFamily: 'Arial'
+          fontFamily: 'Arial',
+          fontWeight: 'normal'
+        };
+      case 'heading1':
+        return {
+          content: 'Título Principal H1',
+          color: '#111827',
+          fontSize: '32px',
+          align: 'left',
+          padding: '10px 20px',
+          fontFamily: 'Arial',
+          fontWeight: 'bold'
+        };
+      case 'heading2':
+        return {
+          content: 'Título Secundario H2',
+          color: '#1f2937',
+          fontSize: '24px',
+          align: 'left',
+          padding: '10px 20px',
+          fontFamily: 'Arial',
+          fontWeight: 'bold'
+        };
+      case 'heading3':
+        return {
+          content: 'Título de Sección H3',
+          color: '#374151',
+          fontSize: '20px',
+          align: 'left',
+          padding: '10px 20px',
+          fontFamily: 'Arial',
+          fontWeight: 'bold'
+        };
+      case 'heading4':
+        return {
+          content: 'Subtítulo H4',
+          color: '#4b5563',
+          fontSize: '18px',
+          align: 'left',
+          padding: '10px 20px',
+          fontFamily: 'Arial',
+          fontWeight: 'bold'
+        };
+      case 'paragraph':
+        return {
+          content: 'Este es un bloque de párrafo. Puedes escribir texto detallado y descriptivo aquí...',
+          color: '#4b5563',
+          fontSize: '16px',
+          align: 'left',
+          padding: '10px 20px',
+          fontFamily: 'Arial',
+          fontWeight: 'normal'
         };
       case 'image':
         return {
@@ -954,6 +1005,7 @@ const App = forwardRef<any, AppProps>(({
             onDeleteNode={handleDeleteNode}
             onCloneNode={handleCloneNode}
             onUpdateNodeContent={handleUpdateNodeContent}
+            onUpdateNodeProperties={(id, props) => handleUpdateProperties(id, props, false)}
           />
         </div>
 

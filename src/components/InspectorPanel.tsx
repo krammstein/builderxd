@@ -185,6 +185,11 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
         );
 
       case 'text':
+      case 'heading1':
+      case 'heading2':
+      case 'heading3':
+      case 'heading4':
+      case 'paragraph':
         return (
           <div className="flex flex-col gap-4">
             <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">Propiedades de Texto</h3>
@@ -211,6 +216,41 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             <div className="flex flex-col gap-1.5">
               {renderLabel('Tamaño de Texto', 'fontSize')}
               <NumberStepper value={p.fontSize || 16} onChange={(val) => handleChange('fontSize', val)} min={8} max={96} unit="px" disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Estilo / Formato', 'fontWeight')}
+              <div className="flex bg-bg-hover p-1 rounded-md border border-border-color/80 w-full shrink-0 select-none gap-1">
+                <button
+                  type="button"
+                  onClick={() => handleChange('fontWeight', p.fontWeight === 'bold' || p.fontWeight === '700' ? 'normal' : 'bold')}
+                  className={`flex-1 text-center py-1 text-xs font-bold rounded-md cursor-pointer transition-all border-none ${
+                    p.fontWeight === 'bold' || p.fontWeight === '700' ? 'bg-primary text-white' : 'text-text-secondary hover:text-text-primary hover:bg-bg-panel'
+                  }`}
+                  style={{ fontWeight: 'bold' }}
+                >
+                  B
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleChange('fontStyle', p.fontStyle === 'italic' ? 'normal' : 'italic')}
+                  className={`flex-1 text-center py-1 text-xs font-bold rounded-md cursor-pointer transition-all border-none ${
+                    p.fontStyle === 'italic' ? 'bg-primary text-white' : 'text-text-secondary hover:text-text-primary hover:bg-bg-panel'
+                  }`}
+                  style={{ fontStyle: 'italic' }}
+                >
+                  I
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleChange('textDecoration', p.textDecoration === 'underline' ? 'none' : 'underline')}
+                  className={`flex-1 text-center py-1 text-xs font-bold rounded-md cursor-pointer transition-all border-none ${
+                    p.textDecoration === 'underline' ? 'bg-primary text-white' : 'text-text-secondary hover:text-text-primary hover:bg-bg-panel'
+                  }`}
+                  style={{ textDecoration: 'underline' }}
+                >
+                  U
+                </button>
+              </div>
             </div>
             <div className="flex flex-col gap-1.5">
               {renderLabel('Peso de Fuente', 'fontWeight')}
