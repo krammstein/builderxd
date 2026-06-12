@@ -5,6 +5,32 @@ Format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 
 ---
 
+## [1.7.0] — 2026-06-12 · `d1f0969`
+
+> **feat: inline canvas text editing, select toolbar, margin/padding layout sliders, template modes, and custom file manager**
+
+### Added — Canvas Inline Operations & Toolbar
+- **Floating Select Toolbar**: Added a dynamic, absolute-positioned toolbar right above the selected element containing action buttons (☰ Mover/Drag, ❐ Duplicar/Clone, 🗑 Eliminar/Delete).
+- **Inline Text Editing**: Enabled `contenteditable` directly in the Canvas on text/button block selection. Caret and editing state are synchronized in real-time with the inspector properties without losing cursor position (Focus Guard DOM patching).
+- **Html Sanitizer**: Strips inline tags dynamically to preserve plain-text content only.
+
+### Added — Layout & Inspector Enhancements
+- **BorderRadiusEditor**: A custom slider controller with a "Personalizar esquinas" checkbox to customize individual corner roundings (top-left, top-right, bottom-right, bottom-left).
+- **MarginEditor**: Custom linked and independent slider control to manage layout margins.
+- **PaddingEditor**: Updated padding values editor to use custom slider controls.
+
+### Added — UI Customizations
+- **Template Mode Toggle**: HTML | MJML selector above the left component library. In HTML mode, MJML-exclusive structure containers are disabled.
+- **Clear Canvas Action**: Added a "Limpiar" button at the top of the component library panel to empty the editor content after confirmation.
+- **UI Configuration Prop**: Introduced `uiConfig` to toggle the visibility of individual interface buttons/headers (import, export, send test, themes, language, viewport sizes, clear button, mode toggle).
+- **Custom File Manager Component**: Added `assetManagerComponent` prop and file manager action trigger next to asset URL inputs, allowing developers to inject a custom file browser component directly.
+
+### Files Changed
+`src/App.tsx`, `src/types.ts`, `src/utils/compiler.ts`, `src/components/Canvas.tsx`, `src/components/Header.tsx`, `src/components/InspectorPanel.tsx`, `src/components/LeftPanel.tsx`, `src/components/inspector/*`
+**+868 lines / -243 lines across 10 files**
+
+---
+
 ## [1.6.0] — 2026-06-12 · `0cadb24`
 
 > **feat: refine builder layout with custom inspector widgets, vertical tabs sidebar, canvas labels & handles, and new block types**
