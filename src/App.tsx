@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { LeftPanel } from './components/LeftPanel';
 import { InspectorPanel } from './components/InspectorPanel';
@@ -9,6 +9,16 @@ import type { BlockNode, BlockType, DeviceMode } from './types';
 import { compileToMJML, compileToHTML } from './utils/compiler';
 import { useTranslation } from './context/LanguageContext';
 import { X, Sparkles } from 'lucide-react';
+
+export interface AppProps {
+  initialTemplate?: BlockNode[] | string;
+  responsive?: DeviceMode;
+  onSave?: (data: { nodes: BlockNode[]; mjml: string; html: string }) => void;
+  onExport?: (data: { nodes: BlockNode[]; mjml: string; html: string }) => void;
+  onTemplateChange?: (mjml: string, html: string) => void;
+  readOnly?: boolean;
+}
+
 
 const INITIAL_TEMPLATE: BlockNode[] = [
   {
@@ -136,15 +146,38 @@ const INITIAL_TEMPLATE: BlockNode[] = [
   }
 ];
 
-function App() {
+function App({
+  initialTemplate,
+  responsive,
+  onSave,
+  onExport,
+  onTemplateChange,
+  readOnly = false
+}: AppProps) {
   const { t } = useTranslation();
-  const [nodes, setNodes] = useState<BlockNode[]>(INITIAL_TEMPLATE);
+
+  const getInitialNodes = (): BlockNode[] => {
+    if (!initialTemplate) return INITIAL_TEMPLATE;
+    if (typeof initialTemplate === 'string') {
+      try {
+        const parsed = JSON.parse(initialTemplate);
+        if (Array.isArray(parsed)) return parsed;
+      } catch (e) {
+        // Fallback
+      }
+      return INITIAL_TEMPLATE;
+    }
+    return initialTemplate;
+  };
+
+  const [nodes, setNodes] = useState<BlockNode[]>(getInitialNodes);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [deviceMode, setDeviceMode] = useState<DeviceMode>('desktop');
+  const [deviceMode, setDeviceMode] = useState<DeviceMode>(responsive || 'desktop');
 
   // History management
-  const [history, setHistory] = useState<BlockNode[][]>([INITIAL_TEMPLATE]);
+  const [history, setHistory] = useState<BlockNode[][]>([getInitialNodes()]);
   const [historyIndex, setHistoryIndex] = useState(0);
+
 
   // Modal control states
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -197,6 +230,7 @@ function App() {
 
   // Add Component handler
   const handleAddComponent = (type: BlockType) => {
+    if (readOnly) return;
     const newId = `${type}-${Math.random().toString(36).substr(2, 9)}`;
     let defaultProps: Record<string, any> = {};
 
@@ -331,6 +365,7 @@ function App() {
 
   // Update properties handler
   const handleUpdateProperties = (id: string, newProps: Record<string, any>, isMobile: boolean) => {
+    if (readOnly) return;
     const updateRecursively = (list: BlockNode[]): BlockNode[] => {
       return list.map((node) => {
         if (node.id === id) {
@@ -357,6 +392,7 @@ function App() {
 
   // Delete node handler
   const handleDeleteNode = (id: string) => {
+    if (readOnly) return;
     const deleteRecursively = (list: BlockNode[]): BlockNode[] => {
       return list
         .filter((node) => node.id !== id)
@@ -374,6 +410,7 @@ function App() {
 
   // Move node handler (Up / Down)
   const handleMoveNode = (id: string, direction: 'up' | 'down') => {
+    if (readOnly) return;
     const moveInArray = (arr: BlockNode[]): BlockNode[] => {
       const idx = arr.findIndex((n) => n.id === id);
       if (idx !== -1) {
@@ -429,6 +466,19 @@ function App() {
   const mjmlCode = compileToMJML(nodes);
   const htmlCode = compileToHTML(nodes, selectedId, deviceMode === 'mobile');
 
+  useEffect(() => {
+    onTemplateChange?.(mjmlCode, htmlCode);
+  }, [mjmlCode, htmlCode, onTemplateChange]);
+
+  useEffect(() => {
+    onSave?.({ nodes, mjml: mjmlCode, html: htmlCode });
+  }, [nodes, mjmlCode, htmlCode, onSave]);
+
+  const handleExportAction = () => {
+    onExport?.({ nodes, mjml: mjmlCode, html: htmlCode });
+    setIsExportOpen(true);
+  };
+
   return (
     <div className="builder-app-container">
       {/* Header Bar */}
@@ -443,7 +493,8 @@ function App() {
           setImportCode(JSON.stringify(nodes, null, 2));
           setIsImportOpen(true);
         }}
-        onExportClick={() => setIsExportOpen(true)}
+        onExportClick={handleExportAction}
+
         onSendTestClick={() => setIsSendTestOpen(true)}
       />
 

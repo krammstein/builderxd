@@ -1,8 +1,21 @@
 {
-  "name": "temp-vite",
-  "private": true,
-  "version": "0.0.0",
+  "name": "builderxd",
+  "version": "1.0.0",
   "type": "module",
+  "main": "./dist/builderxd.umd.js",
+  "module": "./dist/builderxd.es.js",
+  "types": "./dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/builderxd.es.js",
+      "require": "./dist/builderxd.umd.js"
+    },
+    "./dist/builderxd.css": "./dist/builderxd.css"
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -10,9 +23,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "lucide-react": "^1.18.0",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6"
+    "lucide-react": "^1.18.0"
+  },
+  "peerDependencies": {
+    "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
+    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -24,8 +39,11 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
-    "vite": "^8.0.12"
+    "vite": "^8.0.12",
+    "vite-plugin-dts": "^5.0.2"
   }
 }
