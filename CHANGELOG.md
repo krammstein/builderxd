@@ -5,6 +5,41 @@ Format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 
 ---
 
+## [1.6.0] — 2026-06-12 · `0cadb24`
+
+> **feat: refine builder layout with custom inspector widgets, vertical tabs sidebar, canvas labels & handles, and new block types**
+
+### Added — Custom Inspector Widgets
+- Prohibited and replaced all native `<select>`, `<input type="color">`, and `<input type="date">` elements with custom React widgets in `src/components/inspector/`:
+  - **`ColorPicker`**: HSV canvas 2D picker with Hue/Alpha custom sliders and presets.
+  - **`AlignButtonGroup`**: Toggle button group using Lucide icons for alignment.
+  - **`NumberStepper`**: Numeric input with +/- step buttons and unit configuration.
+  - **`SliderWithInput`**: Combined slider range and numeric editable input.
+  - **`PaddingEditor`**: Linked and independent multi-side padding controller.
+  - **`CustomSelect`**: Popover dropdown list with keyboard navigation and custom renders.
+  - **`FontFamilyPicker`**: Dropdown displaying Web-safe and Google Fonts previews with search support.
+  - **`DateTimePicker`**: Custom calendar days grid with Navigation controls and Hour/Minute picker.
+  - **`LinkInput`**: URL input with tabs specifying link types (Web URL, Email, Tel, Anchor).
+  - **`VisibilityToggle`**: Device-level viewport visibility switcher (Desktop and Mobile).
+
+### Added — Layout Refinements
+- **Left Panel Sidebar**: Added a vertical 44px icon tab bar (Components, Layers, Assets).
+- **Draggable Components Grid**: Available elements rendered in a modern 2-column grid.
+- **Collapsible Outline**: Nested outline elements grouped under a root 'Design System Layers' header.
+- **Section Labels**: Floating text banners indicating element types on hover/selection inside Canvas.
+- **8-Point Selection Handles**: 8 visual control points on the edges/corners of selected blocks via pure CSS rules.
+- **5 New Blocks**: Integrated `'icon' | 'nav_menu' | 'image_text' | 'product_card' | 'quote'` block types, default properties, and compiler compilation rules.
+
+### Added — Code Drawer
+- Integrated line numbering column dynamically counting rows.
+- Lightweight custom regex-based tokenizer for syntax highlighting (MJML and HTML tag tags, attributes, strings, comments).
+
+### Files Changed
+`src/App.tsx`, `src/types.ts`, `src/utils/compiler.ts`, `src/components/CodeDrawer.tsx`, `src/components/InspectorPanel.tsx`, `src/components/LeftPanel.tsx`, `src/components/inspector/*`
+**+2,560 lines / -340 lines across 16 files**
+
+---
+
 ## [1.5.0] — 2026-06-12 · `6c82359`
 
 > **feat: implement fileManagerProviders and espIntegrations, optimize Canvas DOM patching, and resolve library export configurations**
