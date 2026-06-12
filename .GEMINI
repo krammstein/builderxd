@@ -1,25 +1,29 @@
-# BuilderXD Context
+# BuilderXD
 
-## Project Overview
-BuilderXD is a flexible and powerful email and page builder application built with React, TypeScript, and Vite. It is designed to compile templates dynamically, support drag-and-drop actions, and provide a premium user experience with modern aesthetics.
+stack: React+TS+Vite | Tailwind v4 | branch=dev
+lib: ESM+UMD export (vite lib mode) | peerDeps: react,react-dom
 
-## Technology Stack
-- **Core:** React (TypeScript) + Vite
-- **Styling:** Vanilla CSS (TailwindCSS not requested)
-- **State Management:** React hooks / Context API (or state libraries as required)
+## Bloques (13)
+section,column,text,image,button,divider,spacer,social,video,custom_html,countdown,accordion,carousel
 
-## Key Features & Requirements
-1. **Sandboxed Iframe Canvas:** Render preview inside a sandboxed iframe with postMessage communication for live editing.
-2. **Performance Optimizations:** Dedicated Web Worker for MJML compilation, lazy-rendering of off-screen components, and smooth drag-and-drop.
-3. **Responsive Controls:** Desktop/Mobile/Tablet toggle with specific mobile overrides (padding, fonts, visibility).
-4. **Localization (i18n):** Multi-language template switching and UI translation with a language selector.
-5. **Theme Support:** Dark / Light theme toggle.
-6. **Import/Export Options:** MJML, inline HTML, HTML with style tag, ZIP. Direct push to connected ESPs.
-7. **Developer Extensibility:** Custom Blocks SDK for custom component registration.
-8. **Email QA / Deliverability:** Size limits warning (Gmail 102 KB clipping prevention), link checker, and accessibility validation.
-9. **Collaboration (Future):** Comments and multiplayer editing support.
-10. **AI Integration (Delayed):** Text generation, translation, and image optimization using AI (implemented at the very end).
+## SDK Props
+mode,initialTemplate,responsive,onSave,onExport,onTemplateChange,readOnly,theme{primaryColor,darkMode,...},fileManagerProviders[],espIntegrations[]
 
-## Working Branches
-- `main`: Clean initialization only.
-- `dev`: Active development branch.
+## API Imperativa (ref)
+undo(),redo(),getCode(),setCode(),exportTemplate(format),sendTest(emails[])
+
+## Arch
+- Canvas: sandboxed iframe + DOM patch (no srcDoc reload si estructura igual)
+- Compiler: Web Worker (compiler.worker.ts) → postMessage {mjml,html}
+- History: diff stack (no snapshots)
+- i18n: LanguageContext (ES/EN) | Theme: ThemeContext (dark/light, localStorage)
+- Modals: FileManager (browse/upload) + ESP (push/pull)
+
+## Pendiente (plan: docs/planes/layout_refinement_plan.md)
+- Inspector: reemplazar select/date nativos con widgets custom
+- Left panel: grid 2-col, sidebar de tabs
+- Bloques faltantes: icon,nav_menu,image_text,product_card,quote
+- Canvas: handles de selección, labels de sección, guías
+
+## Branches
+main=init only | dev=trabajo activo
