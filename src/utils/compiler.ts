@@ -795,16 +795,20 @@ ${fontLinks}
             let formatRow = document.getElementById('tb-format-row');
 
             if (isText) {
-              selected.setAttribute('contenteditable', 'true');
-              selected.style.outline = 'none';
+              let target = selected;
+              if (id.startsWith('button-')) {
+                target = selected.querySelector('a') || selected;
+              }
+              target.setAttribute('contenteditable', 'true');
+              target.style.outline = 'none';
 
-              if (!selected.getAttribute('data-editable-bound')) {
-                selected.setAttribute('data-editable-bound', 'true');
-                selected.addEventListener('input', () => {
+              if (!target.getAttribute('data-editable-bound')) {
+                target.setAttribute('data-editable-bound', 'true');
+                target.addEventListener('input', () => {
                   window.parent.postMessage({
                     type: 'UPDATE_CONTENT',
                     id,
-                    content: selected.innerText // Plain text only
+                    content: target.innerText // Plain text only
                   }, '*');
                 });
               }

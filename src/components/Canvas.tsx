@@ -86,7 +86,13 @@ export const Canvas: React.FC<CanvasProps> = ({
           const currentEl = currentElements[idx];
           if (currentEl.outerHTML !== newEl.outerHTML) {
             // Focus Guard: If this element is the current focused element or contains it, do not replace it to preserve caret/focus
-            if (doc.activeElement && (currentEl === doc.activeElement || currentEl.contains(doc.activeElement))) {
+            // However, if the user is typing in the inspector panel inputs (parent window), we must let the update go through.
+            const isEditingInParent = window.document.activeElement && 
+              (window.document.activeElement.tagName === 'INPUT' || 
+               window.document.activeElement.tagName === 'TEXTAREA' || 
+               window.document.activeElement.tagName === 'SELECT');
+
+            if (!isEditingInParent && doc.activeElement && (currentEl === doc.activeElement || currentEl.contains(doc.activeElement))) {
               return;
             }
             currentEl.outerHTML = newEl.outerHTML;
