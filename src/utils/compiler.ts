@@ -547,6 +547,77 @@ export const compileToHTML = (
           background-color: rgba(79, 70, 229, 0.06) !important;
         }
 
+        /* Float labels for builder elements on hover/selection */
+        .builder-element::before {
+          content: "";
+          position: absolute;
+          top: -18px;
+          left: 8px;
+          background: #4F46E5;
+          color: #ffffff;
+          font-size: 9px;
+          font-family: system-ui, sans-serif;
+          font-weight: bold;
+          padding: 2px 6px;
+          border-radius: 4px 4px 0 0;
+          pointer-events: none;
+          z-index: 99;
+          display: none;
+          white-space: nowrap;
+          text-transform: uppercase;
+        }
+
+        .builder-element:hover::before,
+        .builder-element-selected::before {
+          display: block;
+        }
+
+        /* Specify labels based on data-id prefix */
+        [data-id^="section-"]::before { content: "Sección"; }
+        [data-id^="column-"]::before { content: "Columna"; }
+        [data-id^="text-"]::before { content: "Texto"; }
+        [data-id^="image-"]::before { content: "Imagen"; }
+        [data-id^="button-"]::before { content: "Botón"; }
+        [data-id^="divider-"]::before { content: "Divisor"; }
+        [data-id^="spacer-"]::before { content: "Espaciador"; }
+        [data-id^="social-"]::before { content: "Redes"; }
+        [data-id^="video-"]::before { content: "Vídeo"; }
+        [data-id^="custom_html-"]::before { content: "HTML"; }
+        [data-id^="countdown-"]::before { content: "Contador"; }
+        [data-id^="accordion-"]::before { content: "Acordeón"; }
+        [data-id^="carousel-"]::before { content: "Carrusel"; }
+        [data-id^="icon-"]::before { content: "Icono"; }
+        [data-id^="nav_menu-"]::before { content: "Menú Nav"; }
+        [data-id^="image_text-"]::before { content: "Img + Texto"; }
+        [data-id^="product_card-"]::before { content: "Producto"; }
+        [data-id^="quote-"]::before { content: "Cita"; }
+
+        /* 8-point selection handles */
+        .builder-element-selected::after {
+          content: "";
+          position: absolute;
+          top: 0; left: 0; right: 0; bottom: 0;
+          border: 2px solid #4F46E5;
+          pointer-events: none;
+          z-index: 98;
+          background-image: 
+            radial-gradient(circle, #ffffff 3px, #4F46E5 3px, #4F46E5 4px, transparent 4px),
+            radial-gradient(circle, #ffffff 3px, #4F46E5 3px, #4F46E5 4px, transparent 4px),
+            radial-gradient(circle, #ffffff 3px, #4F46E5 3px, #4F46E5 4px, transparent 4px),
+            radial-gradient(circle, #ffffff 3px, #4F46E5 3px, #4F46E5 4px, transparent 4px),
+            radial-gradient(circle, #ffffff 3px, #4F46E5 3px, #4F46E5 4px, transparent 4px),
+            radial-gradient(circle, #ffffff 3px, #4F46E5 3px, #4F46E5 4px, transparent 4px),
+            radial-gradient(circle, #ffffff 3px, #4F46E5 3px, #4F46E5 4px, transparent 4px),
+            radial-gradient(circle, #ffffff 3px, #4F46E5 3px, #4F46E5 4px, transparent 4px);
+          background-position: 
+            0% 0%, 50% 0%, 100% 0%,
+            0% 50%, 100% 50%,
+            0% 100%, 50% 100%, 100% 100%;
+          background-size: 10px 10px;
+          background-repeat: no-repeat;
+          margin: -2px;
+        }
+
         .drag-hover {
           outline: 2px dashed #4F46E5 !important;
           outline-offset: -2px !important;
