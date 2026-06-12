@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from '../context/LanguageContext';
 import type { BlockType, BlockNode } from '../types';
-
 import {
   Type,
   Image,
@@ -25,6 +24,7 @@ interface LeftPanelProps {
   onSelectNode: (id: string | null) => void;
   onDeleteNode: (id: string) => void;
   onMoveNode: (id: string, direction: 'up' | 'down') => void;
+  readOnly?: boolean;
 }
 
 export const LeftPanel: React.FC<LeftPanelProps> = ({
@@ -33,7 +33,8 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
   selectedId,
   onSelectNode,
   onDeleteNode,
-  onMoveNode
+  onMoveNode,
+  readOnly = false
 }) => {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
@@ -60,52 +61,56 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
     const displayName = availableComponents.find((c) => c.type === node.type)?.label || node.type;
 
     return (
-      <div key={node.id} className="layer-item-wrapper">
+      <div key={node.id} className="flex flex-col">
         <div
-          className={`layer-item ${isSelected ? 'selected' : ''}`}
+          className={`flex items-center p-2 rounded-md mb-0.5 cursor-pointer transition-all hover:bg-bg-hover group ${
+            isSelected ? 'bg-primary/10 text-primary' : 'text-text-secondary'
+          }`}
           style={{ paddingLeft: `${depth * 12 + 8}px` }}
           onClick={(e) => {
             e.stopPropagation();
             onSelectNode(node.id);
           }}
         >
-          <span className="layer-item-icon">
+          <span className={`mr-2 flex items-center ${isSelected ? 'text-primary' : 'text-text-secondary'}`}>
             {availableComponents.find((c) => c.type === node.type)?.icon}
           </span>
-          <span className="layer-item-label">{displayName}</span>
+          <span className="text-xs font-medium truncate flex-1">{displayName}</span>
 
-          <div className="layer-item-actions">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onMoveNode(node.id, 'up');
-              }}
-              title={t('moveUp')}
-              className="layer-action-btn"
-            >
-              <ChevronUp size={12} />
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onMoveNode(node.id, 'down');
-              }}
-              title={t('moveDown')}
-              className="layer-action-btn"
-            >
-              <ChevronDown size={12} />
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDeleteNode(node.id);
-              }}
-              title={t('deleteBlock')}
-              className="layer-action-btn delete"
-            >
-              <Trash2 size={12} />
-            </button>
-          </div>
+          {!readOnly && (
+            <div className="hidden group-hover:flex items-center gap-0.5">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMoveNode(node.id, 'up');
+                }}
+                title={t('moveUp')}
+                className="bg-transparent border-none text-text-muted p-1 rounded-xs cursor-pointer flex items-center justify-center transition-all hover:bg-border-color hover:text-text-primary"
+              >
+                <ChevronUp size={12} />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMoveNode(node.id, 'down');
+                }}
+                title={t('moveDown')}
+                className="bg-transparent border-none text-text-muted p-1 rounded-xs cursor-pointer flex items-center justify-center transition-all hover:bg-border-color hover:text-text-primary"
+              >
+                <ChevronDown size={12} />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDeleteNode(node.id);
+                }}
+                title={t('deleteBlock')}
+                className="bg-transparent border-none text-text-muted p-1 rounded-xs cursor-pointer flex items-center justify-center transition-all hover:bg-red-500/15 hover:text-red-500"
+              >
+                <Trash2 size={12} />
+              </button>
+            </div>
+          )}
         </div>
         {node.children && node.children.map((child) => renderLayerItem(child, depth + 1))}
       </div>
@@ -113,33 +118,36 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
   };
 
   return (
-    <aside className="builder-left-panel">
+    <aside className="w-[300px] bg-bg-panel border-r border-border-color flex flex-col overflow-y-auto h-full">
       {/* Component Library section */}
-      <div className="panel-section">
-        <h2>{t('components')}</h2>
-        <div className="search-box">
-          <Search size={16} className="search-icon" />
+      <div className="p-5 border-b border-border-color">
+        <h2 className="text-sm font-semibold text-text-primary mb-3">{t('components')}</h2>
+        <div className="flex items-center bg-bg-hover border border-border-color rounded-md p-2 px-3 gap-2 mb-4">
+          <Search size={16} className="text-text-muted" />
           <input
             type="text"
             placeholder={t('searchComponents')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            className="bg-transparent border-none text-text-primary text-xs outline-none w-full"
           />
         </div>
 
-        <div className="components-list">
+        <div className="flex flex-col gap-2">
           {filteredComponents.map((comp) => (
             <div
               key={comp.type}
-              className="component-card"
+              className="flex items-center p-2.5 border border-border-color rounded-lg cursor-pointer transition-all hover:bg-bg-hover hover:border-primary hover:-translate-y-0.5 gap-3 group"
               onClick={() => onAddComponent(comp.type)}
-              draggable
+              draggable={!readOnly}
               onDragStart={(e) => e.dataTransfer.setData('text/plain', comp.type)}
             >
-              <div className="component-icon">{comp.icon}</div>
-              <div className="component-info">
-                <h3>{comp.label}</h3>
-                <p>{comp.desc}</p>
+              <div className="bg-bg-hover text-primary p-2 rounded-md flex items-center justify-center transition-colors group-hover:bg-primary/10">
+                {comp.icon}
+              </div>
+              <div>
+                <h3 className="text-xs font-semibold text-text-primary mb-0.5">{comp.label}</h3>
+                <p className="text-[10px] text-text-muted">{comp.desc}</p>
               </div>
             </div>
           ))}
@@ -147,14 +155,14 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
       </div>
 
       {/* Layers Tree section */}
-      <div className="panel-section layers-section">
-        <div className="layers-header">
+      <div className="p-5 flex-1 flex flex-col border-b-0 overflow-hidden">
+        <div className="flex items-center gap-2 mb-3 text-text-primary text-sm font-semibold">
           <Layers size={16} />
           <h2>{t('layers')}</h2>
         </div>
-        <div className="layers-tree">
+        <div className="flex-1 overflow-y-auto">
           {nodes.length === 0 ? (
-            <p className="no-layers-msg">Crea secciones para estructurar tu correo.</p>
+            <p className="text-xs text-text-muted text-center mt-5">Crea secciones para estructurar tu correo.</p>
           ) : (
             nodes.map((node) => renderLayerItem(node, 0))
           )}

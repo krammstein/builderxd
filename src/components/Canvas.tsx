@@ -1,7 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import type { DeviceMode, BlockType } from '../types';
 
-
 interface CanvasProps {
   htmlContent: string;
   deviceMode: DeviceMode;
@@ -34,7 +33,7 @@ export const Canvas: React.FC<CanvasProps> = ({
     return () => {
       window.removeEventListener('message', handleIframeMessage);
     };
-  }, [onSelectNode]);
+  }, [onSelectNode, onDropElement]);
 
   // Determine width based on responsive setting
   const getCanvasWidth = () => {
@@ -94,17 +93,17 @@ export const Canvas: React.FC<CanvasProps> = ({
   };
 
   return (
-    <main className="builder-canvas-container">
+    <main className="flex-1 bg-bg-app flex items-center justify-center p-6 overflow-hidden h-full">
       <div
-        className="canvas-viewport"
+        className="bg-bg-panel border border-border-color rounded-xl shadow-lg flex flex-col h-full overflow-hidden relative"
         style={{
           width: getCanvasWidth(),
           maxWidth: '100%',
           transition: 'width 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
         }}
       >
-        <div className="canvas-header-info">
-          <span className="canvas-resolution">
+        <div className="h-8 bg-bg-hover border-b border-border-color flex items-center justify-center px-4">
+          <span className="text-[10px] font-semibold font-mono text-text-muted uppercase">
             {deviceMode === 'desktop' && '100% (Desktop)'}
             {deviceMode === 'tablet' && '600px x 800px (Tablet)'}
             {deviceMode === 'mobile' && '375px x 667px (Mobile)'}
@@ -116,7 +115,7 @@ export const Canvas: React.FC<CanvasProps> = ({
           srcDoc={htmlContent}
           title="Email Builder Canvas"
           sandbox="allow-same-origin allow-scripts"
-          className="canvas-iframe"
+          className="flex-1 border-none w-full h-full bg-[#f8fafc]"
           onLoad={handleIframeLoad}
         />
       </div>

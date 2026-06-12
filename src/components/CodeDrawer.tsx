@@ -5,11 +5,17 @@ import { Terminal, Copy, Check, ChevronUp, ChevronDown } from 'lucide-react';
 interface CodeDrawerProps {
   mjmlCode: string;
   htmlCode: string;
+  isOpen: boolean;
+  onToggle: () => void;
 }
 
-export const CodeDrawer: React.FC<CodeDrawerProps> = ({ mjmlCode, htmlCode }) => {
+export const CodeDrawer: React.FC<CodeDrawerProps> = ({
+  mjmlCode,
+  htmlCode,
+  isOpen,
+  onToggle
+}) => {
   const { t } = useTranslation();
-  const [isOpen, setIsOpen] = useState(true);
   const [activeTab, setActiveTab] = useState<'mjml' | 'html'>('mjml');
   const [copied, setCopied] = useState(false);
 
@@ -25,32 +31,32 @@ export const CodeDrawer: React.FC<CodeDrawerProps> = ({ mjmlCode, htmlCode }) =>
   };
 
   return (
-    <div className={`builder-code-drawer ${isOpen ? 'open' : 'collapsed'}`}>
+    <div className={`bg-bg-panel border-t border-border-color flex flex-col absolute bottom-0 left-[300px] right-[300px] z-40 shadow-lg builder-code-drawer ${isOpen ? 'h-[300px]' : 'h-10'}`}>
       {/* Drawer Header */}
-      <div className="drawer-header" onClick={() => setIsOpen(!isOpen)}>
-        <div className="header-title">
+      <div className="h-10 px-4 flex items-center justify-between cursor-pointer bg-bg-hover" onClick={onToggle}>
+        <div className="flex items-center gap-2 flex-1">
           <Terminal size={16} />
-          <h2>{t('codeView')}</h2>
-          <span className={`size-badge ${isClipped ? 'warning' : 'success'}`}>
+          <h2 className="text-xs font-semibold">{t('codeView')}</h2>
+          <span className={`font-mono text-[10px] font-bold px-1.5 py-0.5 rounded ${isClipped ? 'bg-red-500/15 text-danger' : 'bg-green-500/15 text-success'}`}>
             {htmlKbSize} KB
           </span>
-          <span className="size-status">
+          <span className="text-[11px] text-text-secondary truncate max-w-[200px] md:max-w-md">
             {isClipped ? t('gmailWarning') : t('gmailOk')}
           </span>
         </div>
 
-        <div className="header-actions">
+        <div className="flex items-center gap-2">
           <button
             onClick={(e) => {
               e.stopPropagation();
               handleCopy();
             }}
-            className="copy-btn"
+            className="bg-transparent border-none text-text-secondary p-1 cursor-pointer rounded hover:bg-border-color hover:text-text-primary flex items-center justify-center"
             title="Copiar código"
           >
-            {copied ? <Check size={14} className="success-icon" /> : <Copy size={14} />}
+            {copied ? <Check size={14} className="text-success" /> : <Copy size={14} />}
           </button>
-          <button className="toggle-btn">
+          <button className="bg-transparent border-none text-text-secondary p-1 cursor-pointer rounded hover:bg-border-color hover:text-text-primary flex items-center justify-center">
             {isOpen ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
           </button>
         </div>
@@ -58,25 +64,29 @@ export const CodeDrawer: React.FC<CodeDrawerProps> = ({ mjmlCode, htmlCode }) =>
 
       {/* Drawer Content */}
       {isOpen && (
-        <div className="drawer-content">
-          <div className="drawer-tabs">
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex border-b border-border-color bg-bg-panel">
             <button
-              className={`drawer-tab ${activeTab === 'mjml' ? 'active' : ''}`}
+              className={`bg-transparent border-none border-b-2 p-2 px-4 text-[11px] font-semibold cursor-pointer ${
+                activeTab === 'mjml' ? 'border-b-primary text-primary' : 'border-b-transparent text-text-secondary'
+              }`}
               onClick={() => setActiveTab('mjml')}
             >
               MJML
             </button>
             <button
-              className={`drawer-tab ${activeTab === 'html' ? 'active' : ''}`}
+              className={`bg-transparent border-none border-b-2 p-2 px-4 text-[11px] font-semibold cursor-pointer ${
+                activeTab === 'html' ? 'border-b-primary text-primary' : 'border-b-transparent text-text-secondary'
+              }`}
               onClick={() => setActiveTab('html')}
             >
               HTML
             </button>
           </div>
 
-          <div className="code-viewer">
-            <pre>
-              <code>{activeTab === 'mjml' ? mjmlCode : htmlCode}</code>
+          <div className="flex-1 bg-code-bg overflow-auto p-4">
+            <pre className="margin-0">
+              <code className="font-mono text-xs text-code-text whitespace-pre-wrap break-all bg-transparent p-0">{activeTab === 'mjml' ? mjmlCode : htmlCode}</code>
             </pre>
           </div>
         </div>

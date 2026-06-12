@@ -8,6 +8,7 @@ import type { BlockNode, BlockType, DeviceMode } from './types';
 
 import { compileToMJML, compileToHTML } from './utils/compiler';
 import { useTranslation } from './context/LanguageContext';
+import { useTheme } from './context/ThemeContext';
 import { X, Sparkles } from 'lucide-react';
 
 export interface AppProps {
@@ -17,6 +18,13 @@ export interface AppProps {
   onExport?: (data: { nodes: BlockNode[]; mjml: string; html: string }) => void;
   onTemplateChange?: (mjml: string, html: string) => void;
   readOnly?: boolean;
+  theme?: {
+    primaryColor?: string;
+    primaryColorHover?: string;
+    accentColor?: string;
+    borderRadius?: number;
+    darkMode?: boolean;
+  };
 }
 
 
@@ -152,9 +160,11 @@ function App({
   onSave,
   onExport,
   onTemplateChange,
-  readOnly = false
+  readOnly = false,
+  theme
 }: AppProps) {
   const { t } = useTranslation();
+  const { setTheme } = useTheme();
 
   const getInitialNodes = (): BlockNode[] => {
     if (!initialTemplate) return INITIAL_TEMPLATE;
@@ -173,6 +183,21 @@ function App({
   const [nodes, setNodes] = useState<BlockNode[]>(getInitialNodes);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [deviceMode, setDeviceMode] = useState<DeviceMode>(responsive || 'desktop');
+  const [isCodeDrawerOpen, setIsCodeDrawerOpen] = useState(true);
+
+  // Sync dark mode from SDK prop if provided
+  useEffect(() => {
+    if (theme?.darkMode !== undefined) {
+      setTheme(theme.darkMode ? 'dark' : 'light');
+    }
+  }, [theme?.darkMode, setTheme]);
+
+  const customStyles = {
+    '--primary': theme?.primaryColor || '#4F46E5',
+    '--primary-hover': theme?.primaryColorHover || '#4338ca',
+    '--accent-color': theme?.accentColor || '#aa3bff',
+    '--border-radius-val': theme?.borderRadius !== undefined ? `${theme.borderRadius}px` : '8px'
+  } as React.CSSProperties;
 
   // History management
   const [history, setHistory] = useState<BlockNode[][]>([getInitialNodes()]);
@@ -638,7 +663,7 @@ function App({
   };
 
   return (
-    <div className="builder-app-container">
+    <div className="flex flex-col h-screen w-screen overflow-hidden bg-bg-app text-text-primary" style={customStyles}>
       {/* Header Bar */}
       <Header
         deviceMode={deviceMode}
@@ -652,12 +677,11 @@ function App({
           setIsImportOpen(true);
         }}
         onExportClick={handleExportAction}
-
         onSendTestClick={() => setIsSendTestOpen(true)}
       />
 
       {/* Main Workspace layout */}
-      <div className="builder-workspace">
+      <div className="flex flex-1 h-[calc(100vh-60px)] overflow-hidden relative">
         {/* Left panel: components & layers */}
         <LeftPanel
           onAddComponent={handleAddComponent}
@@ -666,25 +690,34 @@ function App({
           onSelectNode={setSelectedId}
           onDeleteNode={handleDeleteNode}
           onMoveNode={handleMoveNode}
+          readOnly={readOnly}
         />
 
         {/* Center Canvas */}
-        <Canvas
-          htmlContent={htmlCode}
-          deviceMode={deviceMode}
-          onSelectNode={setSelectedId}
-          onDropElement={handleDropElement}
-        />
+        <div className={`flex-1 flex transition-all duration-300 ${isCodeDrawerOpen ? 'pb-[260px]' : 'pb-10'}`}>
+          <Canvas
+            htmlContent={htmlCode}
+            deviceMode={deviceMode}
+            onSelectNode={setSelectedId}
+            onDropElement={handleDropElement}
+          />
+        </div>
 
         {/* Right Panel: properties inspector */}
         <InspectorPanel
           selectedNode={selectedNode}
           onUpdateProperties={handleUpdateProperties}
           onDeleteNode={handleDeleteNode}
+          readOnly={readOnly}
         />
 
         {/* Collapsible bottom drawer for code preview */}
-        <CodeDrawer mjmlCode={mjmlCode} htmlCode={htmlCode} />
+        <CodeDrawer
+          mjmlCode={mjmlCode}
+          htmlCode={htmlCode}
+          isOpen={isCodeDrawerOpen}
+          onToggle={() => setIsCodeDrawerOpen(!isCodeDrawerOpen)}
+        />
       </div>
 
       {/* --- MODALS --- */}
@@ -704,17 +737,16 @@ function App({
                 value={importCode}
                 onChange={(e) => setImportCode(e.target.value)}
                 placeholder={t('importPlaceholder')}
-                className="property-input"
+                className="bg-bg-hover border border-border-color text-text-primary p-2 px-3 rounded-md text-xs outline-none transition-all focus:border-primary w-full font-mono text-[11px]"
                 rows={12}
-                style={{ fontFamily: 'monospace', fontSize: '11px' }}
               />
-              {importError && <span style={{ color: 'var(--danger)', fontSize: '12px' }}>{importError}</span>}
+              {importError && <span className="text-danger text-xs">{importError}</span>}
             </div>
             <div className="modal-footer">
-              <button onClick={() => setIsImportOpen(false)} className="btn btn-secondary">
+              <button onClick={() => setIsImportOpen(false)} className="border-none p-2 px-3.5 rounded-md text-xs font-semibold cursor-pointer transition-all bg-bg-hover text-text-primary border border-border-color hover:bg-border-color/50">
                 {t('close')}
               </button>
-              <button onClick={handleImport} className="btn btn-primary">
+              <button onClick={handleImport} className="border-none p-2 px-3.5 rounded-md text-xs font-semibold cursor-pointer transition-all bg-primary hover:bg-primary-hover text-white">
                 {t('load')}
               </button>
             </div>
@@ -725,7 +757,7 @@ function App({
       {/* Export Modal */}
       {isExportOpen && (
         <div className="modal-overlay">
-          <div className="modal-content" style={{ width: '600px' }}>
+          <div className="modal-content !w-[600px]">
             <div className="modal-header">
               <h2>{t('export')}</h2>
               <button onClick={() => setIsExportOpen(false)} className="modal-close-btn">
@@ -733,8 +765,8 @@ function App({
               </button>
             </div>
             <div className="modal-body">
-              <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{t('exportSuccess')}</p>
-              <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+              <p className="text-xs text-text-secondary">{t('exportSuccess')}</p>
+              <div className="flex gap-2 mt-2.5">
                 <button
                   onClick={() => {
                     const blob = new Blob([mjmlCode], { type: 'text/plain;charset=utf-8' });
@@ -744,8 +776,7 @@ function App({
                     link.download = 'template.mjml';
                     link.click();
                   }}
-                  className="btn btn-secondary"
-                  style={{ flex: 1 }}
+                  className="flex-1 border-none p-2 px-3.5 rounded-md text-xs font-semibold cursor-pointer transition-all bg-bg-hover text-text-primary border border-border-color hover:bg-border-color/50"
                 >
                   Download MJML
                 </button>
@@ -758,15 +789,14 @@ function App({
                     link.download = 'template.html';
                     link.click();
                   }}
-                  className="btn btn-primary"
-                  style={{ flex: 1 }}
+                  className="flex-1 border-none p-2 px-3.5 rounded-md text-xs font-semibold cursor-pointer transition-all bg-primary hover:bg-primary-hover text-white"
                 >
                   Download HTML
                 </button>
               </div>
             </div>
             <div className="modal-footer">
-              <button onClick={() => setIsExportOpen(false)} className="btn btn-secondary">
+              <button onClick={() => setIsExportOpen(false)} className="border-none p-2 px-3.5 rounded-md text-xs font-semibold cursor-pointer transition-all bg-bg-hover text-text-primary border border-border-color hover:bg-border-color/50">
                 {t('close')}
               </button>
             </div>
@@ -785,26 +815,26 @@ function App({
               </button>
             </div>
             <div className="modal-body">
-              <label style={{ fontSize: '12px', fontWeight: 500 }}>{t('enterTestEmails')}</label>
+              <label className="text-[11.5px] font-medium text-text-secondary">{t('enterTestEmails')}</label>
               <input
                 type="text"
                 placeholder="test@example.com, user@domain.com"
                 value={testEmails}
                 onChange={(e) => setTestEmails(e.target.value)}
-                className="property-input"
+                className="bg-bg-hover border border-border-color text-text-primary p-2 px-3 rounded-md text-xs outline-none transition-all focus:border-primary w-full"
               />
               {testAlert && (
-                <div style={{ padding: '8px 12px', backgroundColor: 'rgba(16, 185, 129, 0.15)', color: 'var(--success)', borderRadius: '6px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div className="p-2 px-3 bg-green-500/15 text-success rounded-md text-xs flex items-center gap-1.5">
                   <Sparkles size={14} />
                   <span>{testAlert}</span>
                 </div>
               )}
             </div>
             <div className="modal-footer">
-              <button onClick={() => setIsSendTestOpen(false)} className="btn btn-secondary">
+              <button onClick={() => setIsSendTestOpen(false)} className="border-none p-2 px-3.5 rounded-md text-xs font-semibold cursor-pointer transition-all bg-bg-hover text-text-primary border border-border-color hover:bg-border-color/50">
                 {t('close')}
               </button>
-              <button onClick={handleSendTest} className="btn btn-accent" disabled={!testEmails.trim()}>
+              <button onClick={handleSendTest} className="border-none p-2 px-3.5 rounded-md text-xs font-semibold cursor-pointer transition-all bg-accent-color text-white hover:opacity-90 disabled:opacity-55 disabled:cursor-not-allowed" disabled={!testEmails.trim()}>
                 {t('send')}
               </button>
             </div>
