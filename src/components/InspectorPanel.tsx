@@ -2,25 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from '../context/LanguageContext';
 import type { BlockNode } from '../types';
 import { Sliders, Smartphone, Trash2 } from 'lucide-react';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
-
-const quillModules = {
-  toolbar: [
-    ['bold', 'italic', 'underline', 'strike'],
-    [{ 'color': [] }, { 'background': [] }],
-    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-    [{ 'align': [] }],
-    ['clean']
-  ]
-};
-
-const quillFormats = [
-  'bold', 'italic', 'underline', 'strike',
-  'color', 'background',
-  'list', 'bullet',
-  'align'
-];
+import { RichTextEditor } from './inspector/RichTextEditor';
 
 // Import Custom Widgets
 import { ColorPicker } from './inspector/ColorPicker';
@@ -210,13 +192,10 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             {!isMobileTab && (
               <div className="flex flex-col gap-1.5 builder-rich-text-editor">
                 {renderLabel('Contenido Enriquecido', 'content')}
-                <ReactQuill
+                <RichTextEditor
                   value={p.content || ''}
                   onChange={(val) => handleChange('content', val)}
-                  readOnly={readOnly}
-                  modules={quillModules}
-                  formats={quillFormats}
-                  theme="snow"
+                  disabled={readOnly}
                 />
               </div>
             )}
