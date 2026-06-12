@@ -764,10 +764,11 @@ const App = forwardRef<any, AppProps>(({
     updateNodesAndHistory(next);
   };
 
-  const handleUpdateNodeContent = (id: string, content: string) => {
+  const handleUpdateNodeContent = (id: string, content: string, propName?: string) => {
     if (readOnly) return;
     const clean = content.replace(/<\/?[^>]+(>|$)/g, "");
-    handleUpdateProperties(id, { content: clean }, false);
+    const targetProp = propName || 'content';
+    handleUpdateProperties(id, { [targetProp]: clean }, false);
   };
 
   // Move node handler (Up / Down)

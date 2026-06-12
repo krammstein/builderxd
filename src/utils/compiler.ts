@@ -309,7 +309,7 @@ export const compileToHTML = (
         const textDecoration = getResponsiveStyle(node, 'textDecoration', 'none');
         const content = node.properties.content || 'Escribe aquí tu texto...';
         return `
-          <div data-id="${node.id}" class="builder-element${isSelectedClass}" style="color: ${color}; font-size: ${fontSize}; text-align: ${align}; padding: ${padding}; margin: ${margin}; border-radius: ${borderRadius}; line-height: 1.5; font-family: ${font}; font-weight: ${fontWeight}; font-style: ${fontStyle}; text-decoration: ${textDecoration}; box-sizing: border-box;">
+          <div data-id="${node.id}" class="builder-element${isSelectedClass}" data-prop="content" style="color: ${color}; font-size: ${fontSize}; text-align: ${align}; padding: ${padding}; margin: ${margin}; border-radius: ${borderRadius}; line-height: 1.5; font-family: ${font}; font-weight: ${fontWeight}; font-style: ${fontStyle}; text-decoration: ${textDecoration}; box-sizing: border-box;">
             ${content}
           </div>
         `;
@@ -441,10 +441,10 @@ export const compileToHTML = (
           <div data-id="${node.id}" class="builder-element${isSelectedClass}" style="padding: ${padding}; box-sizing: border-box; font-family: sans-serif;">
             <details style="border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px; background: white;" open>
               <summary style="font-weight: 600; cursor: pointer; outline: none; list-style: none; display: flex; justify-content: space-between; align-items: center;">
-                <span>${title}</span>
+                <span data-prop="title">${title}</span>
                 <span style="font-size: 12px; opacity: 0.5;">▼</span>
               </summary>
-              <div style="margin-top: 8px; color: #4b5563; font-size: 14px; line-height: 1.5;">
+              <div data-prop="content" style="margin-top: 8px; color: #4b5563; font-size: 14px; line-height: 1.5;">
                 ${content}
               </div>
             </details>
@@ -518,7 +518,7 @@ export const compileToHTML = (
             <div style="width: ${isMobile ? '100%' : imgWidth + '%'}; shrink: 0;">
               <img src="${imgUrl}" style="max-width: 100%; height: auto; border-radius: 4px; display: block;" />
             </div>
-            <div style="flex: 1; min-width: 0;">
+            <div data-prop="text" style="flex: 1; min-width: 0;">
               ${text}
             </div>
           </div>
@@ -538,9 +538,9 @@ export const compileToHTML = (
           <div data-id="${node.id}" class="builder-element${isSelectedClass}" style="padding: ${padding}; box-sizing: border-box;">
             <div style="background-color: ${bg}; border-radius: ${radius}; border: 1px solid #e5e7eb; padding: 15px; text-align: center; font-family: Arial, sans-serif;">
               <img src="${imgUrl}" style="max-width: 150px; height: auto; border-radius: 4px; margin: 0 auto 10px; display: block;" />
-              <h4 style="margin: 0 0 5px; font-size: 16px; color: #1f2937; font-weight: bold;">${title}</h4>
-              <p style="margin: 0 0 12px; font-size: 14px; color: #6b7280;">${price}</p>
-              <a href="${btnUrl}" style="background-color: ${color}; color: #ffffff; padding: 8px 16px; border-radius: 4px; display: inline-block; text-decoration: none; font-size: 13px; font-weight: 500;" target="_blank">
+              <h4 data-prop="title" style="margin: 0 0 5px; font-size: 16px; color: #1f2937; font-weight: bold;">${title}</h4>
+              <p data-prop="price" style="margin: 0 0 12px; font-size: 14px; color: #6b7280;">${price}</p>
+              <a href="${btnUrl}" data-prop="buttonText" style="background-color: ${color}; color: #ffffff; padding: 8px 16px; border-radius: 4px; display: inline-block; text-decoration: none; font-size: 13px; font-weight: 500;" target="_blank">
                 ${btnText}
               </a>
             </div>
@@ -557,8 +557,8 @@ export const compileToHTML = (
         return `
           <div data-id="${node.id}" class="builder-element${isSelectedClass}" style="padding: ${padding}; box-sizing: border-box;">
             <div style="background-color: ${bg}; border-radius: ${radius}; padding: 20px; text-align: center; font-family: Arial, sans-serif; border-left: 4px solid #4f46e5;">
-              <p style="margin: 0 0 8px; font-style: italic; color: ${color}; font-size: 15px; line-height: 1.5;">"${text}"</p>
-              <h5 style="margin: 0; font-size: 13px; color: #1f2937; font-weight: bold;">- ${author}</h5>
+              <p data-prop="text" style="margin: 0 0 8px; font-style: italic; color: ${color}; font-size: 15px; line-height: 1.5;">"${text}"</p>
+              <h5 data-prop="author" style="margin: 0; font-size: 13px; color: #1f2937; font-weight: bold;">- ${author}</h5>
             </div>
           </div>
         `;
@@ -720,8 +720,8 @@ ${fontLinks}
           const el = e.target.closest('[data-id]');
           if (el) {
             const id = el.getAttribute('data-id');
-            const isText = id.startsWith('text-') || id.startsWith('button-') || id.startsWith('heading') || id.startsWith('paragraph');
-            if (!isText) {
+            const hasProp = e.target.hasAttribute('data-prop') || e.target.closest('[data-prop]');
+            if (!hasProp) {
               e.preventDefault();
             }
             e.stopPropagation();
@@ -782,27 +782,34 @@ ${fontLinks}
 
             // Check if it is a text-editing node
             const id = selected.getAttribute('data-id');
-            const isText = id && (id.startsWith('text-') || id.startsWith('button-') || id.startsWith('heading') || id.startsWith('paragraph'));
+            const editableElements = selected.hasAttribute('data-prop') ? [selected] : Array.from(selected.querySelectorAll('[data-prop]'));
+            const isText = editableElements.length > 0;
             let formatRow = document.getElementById('tb-format-row');
 
             if (isText) {
-              let target = selected;
-              if (id.startsWith('button-')) {
-                target = selected.querySelector('a') || selected;
-              }
-              target.setAttribute('contenteditable', 'true');
-              target.style.outline = 'none';
+              editableElements.forEach(target => {
+                target.setAttribute('contenteditable', 'true');
+                target.style.outline = 'none';
 
-              if (!target.getAttribute('data-editable-bound')) {
-                target.setAttribute('data-editable-bound', 'true');
-                target.addEventListener('input', () => {
-                  window.parent.postMessage({
-                    type: 'UPDATE_CONTENT',
-                    id,
-                    content: target.innerText // Plain text only
-                  }, '*');
-                });
-              }
+                if (!target.getAttribute('data-editable-bound')) {
+                  target.setAttribute('data-editable-bound', 'true');
+                  target.addEventListener('input', () => {
+                    const prop = target.getAttribute('data-prop');
+                    let rawVal = target.innerText;
+                    if (prop === 'text') {
+                      rawVal = rawVal.replace(/^"|"$/g, '');
+                    } else if (prop === 'author') {
+                      rawVal = rawVal.replace(/^- /, '');
+                    }
+                    window.parent.postMessage({
+                      type: 'UPDATE_CONTENT',
+                      id,
+                      propName: prop,
+                      content: rawVal
+                    }, '*');
+                  });
+                }
+              });
 
               if (!formatRow) {
                 formatRow = document.createElement('div');
@@ -811,12 +818,19 @@ ${fontLinks}
                 toolbar.appendChild(formatRow);
               }
 
-              const isB = selected.style.fontWeight === 'bold' || selected.style.fontWeight === '700';
-              const isI = selected.style.fontStyle === 'italic';
-              const isU = selected.style.textDecoration.includes('underline');
-              const textAlign = selected.style.textAlign || 'left';
-              const activeFont = selected.style.fontFamily || 'Arial';
-              const activeSize = selected.style.fontSize || '16px';
+              // Apply styles to the focused editable element, or the first one
+              let activeTarget = editableElements[0];
+              const activeEl = document.activeElement;
+              if (activeEl && editableElements.includes(activeEl)) {
+                activeTarget = activeEl;
+              }
+
+              const isB = activeTarget.style.fontWeight === 'bold' || activeTarget.style.fontWeight === '700';
+              const isI = activeTarget.style.fontStyle === 'italic';
+              const isU = activeTarget.style.textDecoration.includes('underline');
+              const textAlign = activeTarget.style.textAlign || 'left';
+              const activeFont = activeTarget.style.fontFamily || 'Arial';
+              const activeSize = activeTarget.style.fontSize || '16px';
 
               const fontsList = ['Arial', 'Georgia', 'Verdana', 'Tahoma', 'Times New Roman', 'Courier New', 'Trebuchet MS', 'Inter', 'Roboto', 'Outfit', 'Poppins', 'Lato', 'Montserrat', 'Open Sans', 'Nunito', 'Raleway', 'Playfair Display'];
               const fontOptions = fontsList.map(f => '<option value="' + f + '"' + (activeFont.includes(f) ? ' selected' : '') + '>' + f + '</option>').join('');
@@ -833,45 +847,45 @@ ${fontLinks}
 
               // Listeners
               formatRow.querySelector('#tb-bold').onclick = () => {
-                const nextVal = (selected.style.fontWeight === 'bold' || selected.style.fontWeight === '700') ? 'normal' : 'bold';
-                selected.style.fontWeight = nextVal;
+                const nextVal = (activeTarget.style.fontWeight === 'bold' || activeTarget.style.fontWeight === '700') ? 'normal' : 'bold';
+                activeTarget.style.fontWeight = nextVal;
                 window.parent.postMessage({ type: 'UPDATE_PROPERTIES', id, properties: { fontWeight: nextVal } }, '*');
                 updateToolbar();
               };
               formatRow.querySelector('#tb-italic').onclick = () => {
-                const nextVal = selected.style.fontStyle === 'italic' ? 'normal' : 'italic';
-                selected.style.fontStyle = nextVal;
+                const nextVal = activeTarget.style.fontStyle === 'italic' ? 'normal' : 'italic';
+                activeTarget.style.fontStyle = nextVal;
                 window.parent.postMessage({ type: 'UPDATE_PROPERTIES', id, properties: { fontStyle: nextVal } }, '*');
                 updateToolbar();
               };
               formatRow.querySelector('#tb-underline').onclick = () => {
-                const nextVal = selected.style.textDecoration.includes('underline') ? 'none' : 'underline';
-                selected.style.textDecoration = nextVal;
+                const nextVal = activeTarget.style.textDecoration.includes('underline') ? 'none' : 'underline';
+                activeTarget.style.textDecoration = nextVal;
                 window.parent.postMessage({ type: 'UPDATE_PROPERTIES', id, properties: { textDecoration: nextVal } }, '*');
                 updateToolbar();
               };
               formatRow.querySelector('#tb-font-family').onchange = (e) => {
                 const nextVal = e.target.value;
-                selected.style.fontFamily = nextVal;
+                activeTarget.style.fontFamily = nextVal;
                 window.parent.postMessage({ type: 'UPDATE_PROPERTIES', id, properties: { fontFamily: nextVal } }, '*');
               };
               formatRow.querySelector('#tb-font-size').onchange = (e) => {
                 const nextVal = e.target.value;
-                selected.style.fontSize = nextVal;
+                activeTarget.style.fontSize = nextVal;
                 window.parent.postMessage({ type: 'UPDATE_PROPERTIES', id, properties: { fontSize: nextVal } }, '*');
               };
               formatRow.querySelector('#tb-align-left').onclick = () => {
-                selected.style.textAlign = 'left';
+                activeTarget.style.textAlign = 'left';
                 window.parent.postMessage({ type: 'UPDATE_PROPERTIES', id, properties: { align: 'left' } }, '*');
                 updateToolbar();
               };
               formatRow.querySelector('#tb-align-center').onclick = () => {
-                selected.style.textAlign = 'center';
+                activeTarget.style.textAlign = 'center';
                 window.parent.postMessage({ type: 'UPDATE_PROPERTIES', id, properties: { align: 'center' } }, '*');
                 updateToolbar();
               };
               formatRow.querySelector('#tb-align-right').onclick = () => {
-                selected.style.textAlign = 'right';
+                activeTarget.style.textAlign = 'right';
                 window.parent.postMessage({ type: 'UPDATE_PROPERTIES', id, properties: { align: 'right' } }, '*');
                 updateToolbar();
               };

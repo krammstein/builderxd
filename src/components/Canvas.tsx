@@ -8,7 +8,7 @@ interface CanvasProps {
   onDropElement?: (blockType: BlockType, targetId: string | null) => void;
   onDeleteNode?: (id: string) => void;
   onCloneNode?: (id: string) => void;
-  onUpdateNodeContent?: (id: string, content: string) => void;
+  onUpdateNodeContent?: (id: string, content: string, propName?: string) => void;
   onUpdateNodeProperties?: (id: string, properties: Record<string, any>) => void;
 }
 
@@ -38,7 +38,7 @@ export const Canvas: React.FC<CanvasProps> = ({
         } else if (event.data.type === 'CLONE_ELEMENT') {
           onCloneNode?.(event.data.id);
         } else if (event.data.type === 'UPDATE_CONTENT') {
-          onUpdateNodeContent?.(event.data.id, event.data.content);
+          onUpdateNodeContent?.(event.data.id, event.data.content, event.data.propName);
         } else if (event.data.type === 'UPDATE_PROPERTIES') {
           onUpdateNodeProperties?.(event.data.id, event.data.properties);
         }
