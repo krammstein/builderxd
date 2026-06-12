@@ -185,14 +185,40 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
         );
 
       case 'text':
-      case 'heading1':
-      case 'heading2':
-      case 'heading3':
-      case 'heading4':
+      case 'heading':
       case 'paragraph':
         return (
           <div className="flex flex-col gap-4">
             <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">Propiedades de Texto</h3>
+            {selectedNode.type === 'heading' && (
+              <div className="flex flex-col gap-1.5">
+                {renderLabel('Nivel de Encabezado', 'level')}
+                <CustomSelect
+                  value={p.level || 'h1'}
+                  options={[
+                    { label: 'Título 1 (H1)', value: 'h1' },
+                    { label: 'Título 2 (H2)', value: 'h2' },
+                    { label: 'Título 3 (H3)', value: 'h3' },
+                    { label: 'Título 4 (H4)', value: 'h4' },
+                    { label: 'Título 5 (H5)', value: 'h5' },
+                    { label: 'Título 6 (H6)', value: 'h6' }
+                  ]}
+                  onChange={(val) => {
+                    const sizeMap: Record<string, string> = {
+                      h1: '32px',
+                      h2: '24px',
+                      h3: '20px',
+                      h4: '18px',
+                      h5: '16px',
+                      h6: '14px'
+                    };
+                    handleChange('level', val);
+                    handleChange('fontSize', sizeMap[val] || '24px');
+                  }}
+                  disabled={readOnly}
+                />
+              </div>
+            )}
             {!isMobileTab && (
               <div className="flex flex-col gap-1.5">
                 {renderLabel('Contenido', 'content')}

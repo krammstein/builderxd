@@ -477,41 +477,12 @@ const App = forwardRef<any, AppProps>(({
           fontFamily: 'Arial',
           fontWeight: 'normal'
         };
-      case 'heading1':
+      case 'heading':
         return {
-          content: 'Título Principal H1',
+          content: 'Título Principal',
+          level: 'h1',
           color: '#111827',
           fontSize: '32px',
-          align: 'left',
-          padding: '10px 20px',
-          fontFamily: 'Arial',
-          fontWeight: 'bold'
-        };
-      case 'heading2':
-        return {
-          content: 'Título Secundario H2',
-          color: '#1f2937',
-          fontSize: '24px',
-          align: 'left',
-          padding: '10px 20px',
-          fontFamily: 'Arial',
-          fontWeight: 'bold'
-        };
-      case 'heading3':
-        return {
-          content: 'Título de Sección H3',
-          color: '#374151',
-          fontSize: '20px',
-          align: 'left',
-          padding: '10px 20px',
-          fontFamily: 'Arial',
-          fontWeight: 'bold'
-        };
-      case 'heading4':
-        return {
-          content: 'Subtítulo H4',
-          color: '#4b5563',
-          fontSize: '18px',
           align: 'left',
           padding: '10px 20px',
           fontFamily: 'Arial',

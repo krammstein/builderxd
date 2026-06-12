@@ -74,10 +74,7 @@ export const compileToMJML = (nodes: BlockNode[]): string => {
         return content;
       }
       case 'text':
-      case 'heading1':
-      case 'heading2':
-      case 'heading3':
-      case 'heading4':
+      case 'heading':
       case 'paragraph': {
         const color = styleAttr('color', 'color');
         const size = styleAttr('fontSize', 'font-size');
@@ -298,10 +295,7 @@ export const compileToHTML = (
         `;
       }
       case 'text':
-      case 'heading1':
-      case 'heading2':
-      case 'heading3':
-      case 'heading4':
+      case 'heading':
       case 'paragraph': {
         const font = getResponsiveStyle(node, 'fontFamily', 'Arial');
         const color = getResponsiveStyle(node, 'color', '#1a1a1a');
@@ -653,10 +647,7 @@ ${fontLinks}
         [data-id^="section-"]::before { content: "Sección"; }
         [data-id^="column-"]::before { content: "Columna"; }
         [data-id^="text-"]::before { content: "Texto Libre"; }
-        [data-id^="heading1-"]::before { content: "Título H1"; }
-        [data-id^="heading2-"]::before { content: "Título H2"; }
-        [data-id^="heading3-"]::before { content: "Título H3"; }
-        [data-id^="heading4-"]::before { content: "Subtítulo H4"; }
+        [data-id^="heading-"]::before { content: "Título"; }
         [data-id^="paragraph-"]::before { content: "Párrafo"; }
         [data-id^="image-"]::before { content: "Imagen"; }
         [data-id^="button-"]::before { content: "Botón"; }
