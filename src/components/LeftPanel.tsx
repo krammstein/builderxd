@@ -133,6 +133,8 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
               key={comp.type}
               className="component-card"
               onClick={() => onAddComponent(comp.type)}
+              draggable
+              onDragStart={(e) => e.dataTransfer.setData('text/plain', comp.type)}
             >
               <div className="component-icon">{comp.icon}</div>
               <div className="component-info">

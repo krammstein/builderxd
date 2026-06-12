@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Header } from './components/Header';
 import { LeftPanel } from './components/LeftPanel';
 import { InspectorPanel } from './components/InspectorPanel';
@@ -191,6 +191,39 @@ function App({
   // Send Test fields
   const [testEmails, setTestEmails] = useState('');
   const [testAlert, setTestAlert] = useState('');
+
+  // Asynchronous Compiler Web Worker State
+  const [mjmlCode, setMjmlCode] = useState(() => compileToMJML(getInitialNodes()));
+  const [htmlCode, setHtmlCode] = useState(() => compileToHTML(getInitialNodes(), null, responsive === 'mobile'));
+  const workerRef = useRef<Worker | null>(null);
+
+  useEffect(() => {
+    // Instantiate background Web Worker
+    workerRef.current = new Worker(
+      new URL('./utils/compiler.worker.ts', import.meta.url),
+      { type: 'module' }
+    );
+
+    workerRef.current.onmessage = (e: MessageEvent) => {
+      if (e.data.success) {
+        setMjmlCode(e.data.mjml);
+        setHtmlCode(e.data.html);
+      }
+    };
+
+    return () => {
+      workerRef.current?.terminate();
+    };
+  }, []);
+
+  // Post changes to Web Worker for compilation
+  useEffect(() => {
+    workerRef.current?.postMessage({
+      nodes,
+      selectedId,
+      isMobile: deviceMode === 'mobile'
+    });
+  }, [nodes, selectedId, deviceMode]);
 
   // Update history stack
   const updateNodesAndHistory = (newNodes: BlockNode[]) => {
@@ -462,9 +495,134 @@ function App({
     }, 3000);
   };
 
-  // Compile code
-  const mjmlCode = compileToMJML(nodes);
-  const htmlCode = compileToHTML(nodes, selectedId, deviceMode === 'mobile');
+  // Drag and Drop element handler
+  const handleDropElement = (blockType: BlockType, targetId: string | null) => {
+    if (readOnly) return;
+
+    const newId = `${blockType}-${Math.random().toString(36).substr(2, 9)}`;
+    let defaultProps: Record<string, any> = {};
+
+    switch (blockType) {
+      case 'section':
+        defaultProps = { backgroundColor: '#ffffff', padding: '20px 10px' };
+        break;
+      case 'column':
+        defaultProps = { width: '100%', padding: '10px' };
+        break;
+      case 'text':
+        defaultProps = {
+          content: 'Escribe aquí tu texto...',
+          color: '#1a1a1a',
+          fontSize: '16px',
+          align: 'left',
+          padding: '10px 20px'
+        };
+        break;
+      case 'image':
+        defaultProps = {
+          url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=60',
+          altText: 'Image description',
+          align: 'center',
+          borderRadius: '8px',
+          padding: '10px 20px'
+        };
+        break;
+      case 'button':
+        defaultProps = {
+          content: 'Haga clic aquí',
+          url: 'https://example.com',
+          backgroundColor: '#4F46E5',
+          color: '#ffffff',
+          borderRadius: '6px',
+          align: 'center',
+          padding: '12px 24px'
+        };
+        break;
+      case 'divider':
+        defaultProps = { color: '#e5e7eb', thickness: '2px', padding: '15px 20px' };
+        break;
+      case 'spacer':
+        defaultProps = { height: '30px' };
+        break;
+      case 'social':
+        defaultProps = { align: 'center', padding: '15px 20px' };
+        break;
+    }
+
+    const newBlock: BlockNode = {
+      id: newId,
+      type: blockType,
+      properties: defaultProps
+    };
+
+    if (blockType === 'section') {
+      newBlock.children = [
+        {
+          id: `col-${Math.random().toString(36).substr(2, 9)}`,
+          type: 'column',
+          properties: { width: '100%', padding: '10px' },
+          children: []
+        }
+      ];
+      updateNodesAndHistory([...nodes, newBlock]);
+      setSelectedId(newId);
+      return;
+    }
+
+    if (!targetId) {
+      const firstSection = nodes[0];
+      if (firstSection && firstSection.children && firstSection.children.length > 0) {
+        const firstCol = firstSection.children[0];
+        firstCol.children = [...(firstCol.children || []), newBlock];
+        updateNodesAndHistory([...nodes]);
+        setSelectedId(newId);
+      }
+      return;
+    }
+
+    let inserted = false;
+    const insertRecursively = (list: BlockNode[]): BlockNode[] => {
+      return list.map((node) => {
+        if (node.id === targetId) {
+          if (node.type === 'column') {
+            node.children = [...(node.children || []), newBlock];
+            inserted = true;
+          } else if (node.type === 'section') {
+            if (node.children && node.children.length > 0) {
+              node.children[0].children = [...(node.children[0].children || []), newBlock];
+            } else {
+              node.children = [
+                {
+                  id: `col-${Math.random().toString(36).substr(2, 9)}`,
+                  type: 'column',
+                  properties: { width: '100%', padding: '10px' },
+                  children: [newBlock]
+                }
+              ];
+            }
+            inserted = true;
+          }
+        } else if (node.children) {
+          const childIndex = node.children.findIndex((child) => child.id === targetId);
+          if (childIndex !== -1 && node.type === 'column') {
+            const newChildren = [...node.children];
+            newChildren.splice(childIndex + 1, 0, newBlock);
+            node.children = newChildren;
+            inserted = true;
+          } else {
+            node.children = insertRecursively(node.children);
+          }
+        }
+        return node;
+      });
+    };
+
+    const updatedNodes = insertRecursively([...nodes]);
+    if (inserted) {
+      updateNodesAndHistory(updatedNodes);
+      setSelectedId(newId);
+    }
+  };
 
   useEffect(() => {
     onTemplateChange?.(mjmlCode, htmlCode);
@@ -515,6 +673,7 @@ function App({
           htmlContent={htmlCode}
           deviceMode={deviceMode}
           onSelectNode={setSelectedId}
+          onDropElement={handleDropElement}
         />
 
         {/* Right Panel: properties inspector */}

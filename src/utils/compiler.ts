@@ -271,6 +271,12 @@ export const compileToHTML = (
           background-color: rgba(79, 70, 229, 0.06) !important;
         }
 
+        .drag-hover {
+          outline: 2px dashed #4F46E5 !important;
+          outline-offset: -2px !important;
+          background-color: rgba(79, 70, 229, 0.08) !important;
+        }
+
         /* Responsive utilities */
         @media only screen and (max-width: 480px) {
           .builder-element {
