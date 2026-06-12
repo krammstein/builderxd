@@ -30,6 +30,7 @@ export const Canvas: React.FC<CanvasProps> = ({
     const handleIframeMessage = (event: MessageEvent) => {
       if (event.data) {
         if (event.data.type === 'SELECT_ELEMENT') {
+          console.log('[Canvas] SELECT_ELEMENT:', event.data.id);
           onSelectNode(event.data.id);
         } else if (event.data.type === 'DROP_ELEMENT') {
           onDropElement?.(event.data.blockType, event.data.targetId);

@@ -459,7 +459,11 @@ const App = forwardRef<any, AppProps>(({
     return null;
   };
 
-  const selectedNode = selectedId ? findNode(selectedId) : null;
+  const selectedNode = selectedId ? (() => {
+    const found = findNode(selectedId);
+    if (!found) console.warn('[App] findNode: ID not found:', selectedId);
+    return found;
+  })() : null;
 
   const getDefaultProperties = (type: BlockType): Record<string, any> => {
     switch (type) {

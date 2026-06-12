@@ -16,12 +16,20 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   // Keep editor content in sync with value prop, but only if it's different from current innerHTML
   useEffect(() => {
     if (editorRef.current && editorRef.current.innerHTML !== value) {
-      editorRef.current.innerHTML = value;
+      try {
+        editorRef.current.innerHTML = value;
+      } catch (e) {
+        console.warn('RichTextEditor: innerHTML set failed', e);
+      }
     }
   }, [value]);
 
   const executeCommand = (command: string, arg: string = '') => {
-    document.execCommand(command, false, arg);
+    try {
+      document.execCommand(command, false, arg);
+    } catch (e) {
+      console.warn('RichTextEditor: execCommand failed', command, e);
+    }
     triggerChange();
   };
 
@@ -170,7 +178,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         contentEditable={!disabled}
         onInput={handleInput}
         onPaste={handlePaste}
-        className="p-3 min-h-[120px] max-h-[260px] overflow-y-auto outline-none text-sm leading-relaxed prose prose-sm dark:prose-invert"
+        className="p-3 min-h-[120px] max-h-[260px] overflow-y-auto outline-none text-sm leading-relaxed"
         style={{
           boxSizing: 'border-box',
           fontFamily: 'inherit',

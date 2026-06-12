@@ -910,8 +910,8 @@ ${fontLinks}
 
         // Watch DOM mutations to reposition toolbar or bound editable events
         window.addEventListener('load', updateToolbar);
-        const observer = new MutationObserver(updateToolbar);
-        observer.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class'] });
+        const observer = new MutationObserver(() => requestAnimationFrame(updateToolbar));
+        observer.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class'], childList: true });
         window.addEventListener('scroll', updateToolbar);
         window.addEventListener('resize', updateToolbar);
       </script>
