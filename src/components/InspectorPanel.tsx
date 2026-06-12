@@ -2,6 +2,25 @@ import React, { useState } from 'react';
 import { useTranslation } from '../context/LanguageContext';
 import type { BlockNode } from '../types';
 import { Sliders, Smartphone, Trash2 } from 'lucide-react';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
+
+const quillModules = {
+  toolbar: [
+    ['bold', 'italic', 'underline', 'strike'],
+    [{ 'color': [] }, { 'background': [] }],
+    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+    [{ 'align': [] }],
+    ['clean']
+  ]
+};
+
+const quillFormats = [
+  'bold', 'italic', 'underline', 'strike',
+  'color', 'background',
+  'list', 'bullet',
+  'align'
+];
 
 // Import Custom Widgets
 import { ColorPicker } from './inspector/ColorPicker';
@@ -185,6 +204,50 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
         );
 
       case 'text':
+        return (
+          <div className="flex flex-col gap-4">
+            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">Propiedades de Texto Libre</h3>
+            {!isMobileTab && (
+              <div className="flex flex-col gap-1.5 builder-rich-text-editor">
+                {renderLabel('Contenido Enriquecido', 'content')}
+                <ReactQuill
+                  value={p.content || ''}
+                  onChange={(val) => handleChange('content', val)}
+                  readOnly={readOnly}
+                  modules={quillModules}
+                  formats={quillFormats}
+                  theme="snow"
+                />
+              </div>
+            )}
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Tipografía Base', 'fontFamily')}
+              <FontFamilyPicker value={p.fontFamily || 'Arial'} onChange={(val) => handleChange('fontFamily', val)} disabled={readOnly} googleFonts={googleFonts} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Tamaño de Texto Base', 'fontSize')}
+              <NumberStepper value={p.fontSize || 16} onChange={(val) => handleChange('fontSize', val)} min={8} max={96} unit="px" disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Color de Texto Base', 'color')}
+              <ColorPicker value={p.color || '#333333'} onChange={(val) => handleChange('color', val)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Alineación Base', 'align')}
+              <AlignButtonGroup value={p.align || 'left'} onChange={(val) => handleChange('align', val)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <PaddingEditor value={p.padding || '10px 20px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <MarginEditor value={p.margin || '0px'} onChange={(val) => handleChange('margin', val)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <BorderRadiusEditor value={p.borderRadius || '0px'} onChange={(val) => handleChange('borderRadius', val)} disabled={readOnly} />
+            </div>
+          </div>
+        );
+
       case 'heading':
       case 'paragraph':
         return (

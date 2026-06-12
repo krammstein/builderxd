@@ -163,3 +163,42 @@ body {
   to { transform: scale(1); opacity: 1; }
 }
 
+/* Custom styling for react-quill snow theme inside Inspector panel */
+.builder-rich-text-editor .ql-container {
+  border-bottom-left-radius: 6px;
+  border-bottom-right-radius: 6px;
+  background-color: var(--bg-hover, #f3f4f6);
+  font-family: inherit;
+  font-size: 12.5px;
+  min-height: 120px;
+}
+.builder-rich-text-editor .ql-editor {
+  min-height: 120px;
+  color: var(--text-primary);
+}
+.builder-rich-text-editor .ql-toolbar {
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+  background-color: var(--bg-panel, #ffffff);
+  border-color: var(--border-color, #e5e7eb) !important;
+}
+.builder-rich-text-editor .ql-container.ql-snow {
+  border-color: var(--border-color, #e5e7eb) !important;
+}
+.builder-rich-text-editor .ql-snow .ql-stroke {
+  stroke: var(--text-secondary) !important;
+}
+.builder-rich-text-editor .ql-snow .ql-fill {
+  fill: var(--text-secondary) !important;
+}
+.builder-rich-text-editor .ql-snow .ql-picker {
+  color: var(--text-secondary) !important;
+}
+.builder-rich-text-editor .ql-snow .ql-picker-options {
+  background-color: var(--bg-panel) !important;
+  border-color: var(--border-color) !important;
+}
+.builder-rich-text-editor .ql-snow .ql-picker-item:hover {
+  color: var(--primary) !important;
+}
+
