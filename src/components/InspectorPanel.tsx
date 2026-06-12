@@ -3,6 +3,18 @@ import { useTranslation } from '../context/LanguageContext';
 import type { BlockNode } from '../types';
 import { Sliders, Smartphone, Trash2 } from 'lucide-react';
 
+// Import Custom Widgets
+import { ColorPicker } from './inspector/ColorPicker';
+import { AlignButtonGroup } from './inspector/AlignButtonGroup';
+import { NumberStepper } from './inspector/NumberStepper';
+import { SliderWithInput } from './inspector/SliderWithInput';
+import { PaddingEditor } from './inspector/PaddingEditor';
+import { CustomSelect } from './inspector/CustomSelect';
+import { FontFamilyPicker } from './inspector/FontFamilyPicker';
+import { DateTimePicker } from './inspector/DateTimePicker';
+import { LinkInput } from './inspector/LinkInput';
+import { VisibilityToggle } from './inspector/VisibilityToggle';
+
 interface InspectorPanelProps {
   selectedNode: BlockNode | null;
   onUpdateProperties: (id: string, properties: Record<string, any>, isMobile: boolean) => void;
@@ -39,217 +51,699 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
     onUpdateProperties(selectedNode.id, { [key]: value }, isMobileTab);
   };
 
-  // Helper to render property fields
-  const renderField = (
-    label: string,
-    key: string,
-    type: 'text' | 'color' | 'select' | 'range' | 'textarea',
-    options?: string[]
-  ) => {
-    const val = currentProperties[key] !== undefined ? currentProperties[key] : '';
-
-    return (
-      <div className="flex flex-col gap-1.5" key={key}>
-        <div className="flex items-center justify-between">
-          <label className="text-[11.5px] font-medium text-text-secondary">{label}</label>
-          {isMobileTab && selectedNode.mobileProperties?.[key] !== undefined && (
-            <span className="bg-primary text-white text-[9px] font-bold px-1 py-0.5 rounded-xs uppercase" title="Valor sobrescrito para móvil">Móvil</span>
-          )}
-        </div>
-
-        {type === 'textarea' && (
-          <textarea
-            value={val}
-            onChange={(e) => handleChange(key, e.target.value)}
-            disabled={readOnly}
-            className="bg-bg-hover border border-border-color text-text-primary p-2 px-3 rounded-md text-xs outline-none transition-all focus:border-primary w-full disabled:opacity-55"
-            rows={4}
-          />
-        )}
-
-        {type === 'text' && (
-          <input
-            type="text"
-            value={val}
-            onChange={(e) => handleChange(key, e.target.value)}
-            disabled={readOnly}
-            className="bg-bg-hover border border-border-color text-text-primary p-2 px-3 rounded-md text-xs outline-none transition-all focus:border-primary w-full disabled:opacity-55"
-          />
-        )}
-
-        {type === 'color' && (
-          <div className="flex gap-2 w-full">
-            <input
-              type="color"
-              value={val.startsWith('#') && val.length === 7 ? val : '#ffffff'}
-              onChange={(e) => handleChange(key, e.target.value)}
-              disabled={readOnly}
-              className="bg-transparent border-none w-9 h-9 cursor-pointer p-0 shrink-0 disabled:opacity-55"
-            />
-            <input
-              type="text"
-              value={val}
-              onChange={(e) => handleChange(key, e.target.value)}
-              disabled={readOnly}
-              className="bg-bg-hover border border-border-color text-text-primary p-2 px-3 rounded-md text-xs outline-none transition-all focus:border-primary w-full font-mono disabled:opacity-55"
-            />
-          </div>
-        )}
-
-        {type === 'range' && (
-          <div className="flex items-center gap-3 w-full">
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={parseInt(val) || 0}
-              onChange={(e) => handleChange(key, `${e.target.value}px`)}
-              disabled={readOnly}
-              className="flex-1 cursor-pointer accent-primary disabled:opacity-55"
-            />
-            <span className="font-mono text-xs text-text-secondary shrink-0">{val}</span>
-          </div>
-        )}
-
-        {type === 'select' && options && (
-          <select
-            value={val}
-            onChange={(e) => handleChange(key, e.target.value)}
-            disabled={readOnly}
-            className="bg-bg-hover border border-border-color text-text-primary p-2 px-3 rounded-md text-xs outline-none transition-all focus:border-primary w-full cursor-pointer disabled:opacity-55"
-          >
-            {options.map((opt) => (
-              <option key={opt} value={opt} className="dark:bg-bg-panel">
-                {opt}
-              </option>
-            ))}
-          </select>
-        )}
-      </div>
-    );
+  const handleVisibilityChange = (desktopVal: boolean, mobileVal: boolean) => {
+    onUpdateProperties(selectedNode.id, { desktop: desktopVal, mobile: mobileVal }, false);
   };
 
+  // Helper to render label header with Mobile Override Indicator
+  const renderLabel = (label: string, key: string) => (
+    <div className="flex items-center justify-between">
+      <label className="text-[11.5px] font-medium text-text-secondary">{label}</label>
+      {isMobileTab && selectedNode.mobileProperties?.[key] !== undefined && (
+        <span className="bg-primary text-white text-[9px] font-bold px-1 py-0.5 rounded-xs uppercase" title="Sobrescrito en móvil">
+          Móvil
+        </span>
+      )}
+    </div>
+  );
+
   const renderContentProperties = () => {
+    const p = currentProperties;
+
     switch (selectedNode.type) {
       case 'section':
         return (
-          <>
-            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">{t('generalSettings')}</h3>
-            {renderField(t('backgroundColor'), 'backgroundColor', 'color')}
-            {renderField(t('padding'), 'padding', 'text')}
-          </>
+          <div className="flex flex-col gap-4">
+            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">Sección</h3>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Color de Fondo', 'backgroundColor')}
+              <ColorPicker value={p.backgroundColor || '#ffffff'} onChange={(val) => handleChange('backgroundColor', val)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Fondo de Imagen (URL)', 'backgroundImage')}
+              <LinkInput value={p.backgroundImage || ''} onChange={(val) => handleChange('backgroundImage', val)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Posición del Fondo', 'backgroundPosition')}
+              <CustomSelect
+                value={p.backgroundPosition || 'center'}
+                options={[
+                  { label: 'Centro', value: 'center' },
+                  { label: 'Superior', value: 'top' },
+                  { label: 'Inferior', value: 'bottom' },
+                  { label: 'Cubrir (Cover)', value: 'cover' }
+                ]}
+                onChange={(val) => handleChange('backgroundPosition', val)}
+                disabled={readOnly}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Ancho Máximo', 'width')}
+              <NumberStepper value={p.width || 600} onChange={(val) => handleChange('width', val)} min={300} max={800} unit="px" disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <PaddingEditor value={p.padding || '20px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
+            </div>
+            {!isMobileTab && (
+              <VisibilityToggle
+                desktop={p.desktop !== false}
+                mobile={p.mobile !== false}
+                onChange={handleVisibilityChange}
+                disabled={readOnly}
+              />
+            )}
+          </div>
         );
+
       case 'column':
         return (
-          <>
-            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">{t('generalSettings')}</h3>
-            {renderField('Ancho (width)', 'width', 'text')}
-            {renderField(t('padding'), 'padding', 'text')}
-          </>
+          <div className="flex flex-col gap-4">
+            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">Columna</h3>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Ancho (%)', 'width')}
+              <SliderWithInput value={p.width || 100} onChange={(val) => handleChange('width', val)} min={10} max={100} unit="%" disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Alineación Vertical', 'verticalAlign')}
+              <CustomSelect
+                value={p.verticalAlign || 'top'}
+                options={[
+                  { label: 'Superior', value: 'top' },
+                  { label: 'Centrado', value: 'middle' },
+                  { label: 'Inferior', value: 'bottom' }
+                ]}
+                onChange={(val) => handleChange('verticalAlign', val)}
+                disabled={readOnly}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Color de Fondo', 'backgroundColor')}
+              <ColorPicker value={p.backgroundColor || 'transparent'} onChange={(val) => handleChange('backgroundColor', val)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <PaddingEditor value={p.padding || '0px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
+            </div>
+          </div>
         );
+
       case 'text':
         return (
-          <>
-            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">{t('textProperties')}</h3>
-            {!isMobileTab && renderField(t('content'), 'content', 'textarea')}
-            {renderField(t('color'), 'color', 'color')}
-            {renderField(t('fontSize'), 'fontSize', 'text')}
-            {renderField(t('align'), 'align', 'select', ['left', 'center', 'right', 'justify'])}
-            {renderField(t('padding'), 'padding', 'text')}
-          </>
+          <div className="flex flex-col gap-4">
+            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">Propiedades de Texto</h3>
+            {!isMobileTab && (
+              <div className="flex flex-col gap-1.5">
+                {renderLabel('Contenido', 'content')}
+                <textarea
+                  value={p.content || ''}
+                  onChange={(e) => handleChange('content', e.target.value)}
+                  disabled={readOnly}
+                  className="bg-bg-hover border border-border-color text-text-primary p-2 px-3 rounded-md text-xs outline-none transition-all focus:border-primary w-full disabled:opacity-55"
+                  rows={4}
+                />
+              </div>
+            )}
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Tipografía', 'fontFamily')}
+              <FontFamilyPicker value={p.fontFamily || 'Arial'} onChange={(val) => handleChange('fontFamily', val)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Tamaño de Texto', 'fontSize')}
+              <NumberStepper value={p.fontSize || 16} onChange={(val) => handleChange('fontSize', val)} min={8} max={96} unit="px" disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Peso de Fuente', 'fontWeight')}
+              <CustomSelect
+                value={p.fontWeight || '400'}
+                options={[
+                  { label: 'Fino (300)', value: '300' },
+                  { label: 'Normal (400)', value: '400' },
+                  { label: 'Seminegrita (600)', value: '600' },
+                  { label: 'Negrita (700)', value: '700' },
+                  { label: 'Extra Negrita (900)', value: '900' }
+                ]}
+                onChange={(val) => handleChange('fontWeight', val)}
+                disabled={readOnly}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Color de Texto', 'color')}
+              <ColorPicker value={p.color || '#333333'} onChange={(val) => handleChange('color', val)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Alineación', 'align')}
+              <AlignButtonGroup value={p.align || 'left'} onChange={(val) => handleChange('align', val)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <PaddingEditor value={p.padding || '10px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
+            </div>
+          </div>
         );
+
       case 'image':
         return (
-          <>
-            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">{t('imageProperties')}</h3>
-            {!isMobileTab && renderField(t('url'), 'url', 'text')}
-            {!isMobileTab && renderField(t('altText'), 'altText', 'text')}
-            {renderField(t('align'), 'align', 'select', ['left', 'center', 'right'])}
-            {renderField(t('borderRadius'), 'borderRadius', 'text')}
-            {renderField(t('padding'), 'padding', 'text')}
-          </>
+          <div className="flex flex-col gap-4">
+            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">Propiedades de Imagen</h3>
+            {!isMobileTab && (
+              <div className="flex flex-col gap-1.5">
+                {renderLabel('URL de Imagen', 'url')}
+                <LinkInput value={p.url || ''} onChange={(val) => handleChange('url', val)} disabled={readOnly} />
+              </div>
+            )}
+            {!isMobileTab && (
+              <div className="flex flex-col gap-1.5">
+                {renderLabel('Texto Alternativo', 'altText')}
+                <input
+                  type="text"
+                  value={p.altText || ''}
+                  onChange={(e) => handleChange('altText', e.target.value)}
+                  disabled={readOnly}
+                  className="bg-bg-hover border border-border-color text-text-primary p-2 px-3 rounded-md text-xs outline-none transition-all focus:border-primary w-full disabled:opacity-55"
+                />
+              </div>
+            )}
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Alineación', 'align')}
+              <AlignButtonGroup value={p.align || 'center'} options={['left', 'center', 'right']} onChange={(val) => handleChange('align', val as any)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Borde Redondeado', 'borderRadius')}
+              <SliderWithInput value={p.borderRadius || 0} onChange={(val) => handleChange('borderRadius', val)} min={0} max={100} unit="px" disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <PaddingEditor value={p.padding || '0px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
+            </div>
+          </div>
         );
+
       case 'button':
         return (
-          <>
-            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">{t('buttonProperties')}</h3>
-            {!isMobileTab && renderField(t('content'), 'content', 'text')}
-            {!isMobileTab && renderField(t('url'), 'url', 'text')}
-            {renderField(t('backgroundColor'), 'backgroundColor', 'color')}
-            {renderField(t('color'), 'color', 'color')}
-            {renderField(t('borderRadius'), 'borderRadius', 'text')}
-            {renderField(t('align'), 'align', 'select', ['left', 'center', 'right'])}
-            {renderField(t('padding'), 'padding', 'text')}
-          </>
+          <div className="flex flex-col gap-4">
+            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">Propiedades de Botón</h3>
+            {!isMobileTab && (
+              <div className="flex flex-col gap-1.5">
+                {renderLabel('Texto del Botón', 'content')}
+                <input
+                  type="text"
+                  value={p.content || ''}
+                  onChange={(e) => handleChange('content', e.target.value)}
+                  disabled={readOnly}
+                  className="bg-bg-hover border border-border-color text-text-primary p-2 px-3 rounded-md text-xs outline-none transition-all focus:border-primary w-full disabled:opacity-55"
+                />
+              </div>
+            )}
+            {!isMobileTab && (
+              <div className="flex flex-col gap-1.5">
+                {renderLabel('Destino (URL/Email)', 'url')}
+                <LinkInput value={p.url || ''} onChange={(val) => handleChange('url', val)} disabled={readOnly} />
+              </div>
+            )}
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Color de Botón', 'backgroundColor')}
+              <ColorPicker value={p.backgroundColor || '#4f46e5'} onChange={(val) => handleChange('backgroundColor', val)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Color de Texto', 'color')}
+              <ColorPicker value={p.color || '#ffffff'} onChange={(val) => handleChange('color', val)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Borde Redondeado', 'borderRadius')}
+              <SliderWithInput value={p.borderRadius || 4} onChange={(val) => handleChange('borderRadius', val)} min={0} max={50} unit="px" disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Alineación', 'align')}
+              <AlignButtonGroup value={p.align || 'center'} options={['left', 'center', 'right']} onChange={(val) => handleChange('align', val as any)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <PaddingEditor value={p.padding || '10px 20px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
+            </div>
+          </div>
         );
+
       case 'divider':
         return (
-          <>
-            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">{t('componentDivider')}</h3>
-            {renderField('Color', 'color', 'color')}
-            {renderField(t('thickness'), 'thickness', 'text')}
-            {renderField(t('padding'), 'padding', 'text')}
-          </>
+          <div className="flex flex-col gap-4">
+            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">Línea Divisora</h3>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Color de Línea', 'color')}
+              <ColorPicker value={p.color || '#cccccc'} onChange={(val) => handleChange('color', val)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Grosor (Thickness)', 'thickness')}
+              <NumberStepper value={p.thickness || 2} onChange={(val) => handleChange('thickness', val)} min={1} max={20} unit="px" disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Estilo de Borde', 'style')}
+              <CustomSelect
+                value={p.style || 'solid'}
+                options={[
+                  { label: 'Sólido', value: 'solid' },
+                  { label: 'Guiones (Dashed)', value: 'dashed' },
+                  { label: 'Puntos (Dotted)', value: 'dotted' }
+                ]}
+                onChange={(val) => handleChange('style', val)}
+                disabled={readOnly}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <PaddingEditor value={p.padding || '10px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
+            </div>
+          </div>
         );
+
       case 'spacer':
         return (
-          <>
-            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">{t('componentSpacer')}</h3>
-            {renderField(t('height'), 'height', 'text')}
-          </>
+          <div className="flex flex-col gap-4">
+            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">Espaciador</h3>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Altura', 'height')}
+              <SliderWithInput value={p.height || 20} onChange={(val) => handleChange('height', val)} min={5} max={200} unit="px" disabled={readOnly} />
+            </div>
+          </div>
         );
+
       case 'social':
         return (
-          <>
-            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">{t('componentSocial')}</h3>
-            {renderField(t('align'), 'align', 'select', ['left', 'center', 'right'])}
-            {renderField(t('padding'), 'padding', 'text')}
-          </>
+          <div className="flex flex-col gap-4">
+            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">Redes Sociales</h3>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Alineación', 'align')}
+              <AlignButtonGroup value={p.align || 'center'} options={['left', 'center', 'right']} onChange={(val) => handleChange('align', val as any)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <PaddingEditor value={p.padding || '10px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
+            </div>
+          </div>
         );
+
       case 'video':
         return (
-          <>
-            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">{t('componentVideo')}</h3>
-            {!isMobileTab && renderField('URL de Miniatura (Thumbnail)', 'thumbnailUrl', 'text')}
-            {!isMobileTab && renderField('URL de Vídeo (Video)', 'videoUrl', 'text')}
-            {renderField(t('align'), 'align', 'select', ['left', 'center', 'right'])}
-            {renderField(t('padding'), 'padding', 'text')}
-          </>
+          <div className="flex flex-col gap-4">
+            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">Elemento de Vídeo</h3>
+            {!isMobileTab && (
+              <div className="flex flex-col gap-1.5">
+                {renderLabel('Miniatura (Thumbnail)', 'thumbnailUrl')}
+                <LinkInput value={p.thumbnailUrl || ''} onChange={(val) => handleChange('thumbnailUrl', val)} disabled={readOnly} />
+              </div>
+            )}
+            {!isMobileTab && (
+              <div className="flex flex-col gap-1.5">
+                {renderLabel('Enlace de Vídeo', 'videoUrl')}
+                <LinkInput value={p.videoUrl || ''} onChange={(val) => handleChange('videoUrl', val)} disabled={readOnly} />
+              </div>
+            )}
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Alineación', 'align')}
+              <AlignButtonGroup value={p.align || 'center'} options={['left', 'center', 'right']} onChange={(val) => handleChange('align', val as any)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <PaddingEditor value={p.padding || '10px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
+            </div>
+          </div>
         );
+
       case 'custom_html':
         return (
-          <>
-            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">{t('componentCustomHtml')}</h3>
-            {!isMobileTab && renderField('Código HTML', 'htmlContent', 'textarea')}
-          </>
+          <div className="flex flex-col gap-4">
+            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">HTML Personalizado</h3>
+            {!isMobileTab && (
+              <div className="flex flex-col gap-1.5">
+                {renderLabel('Código HTML', 'htmlContent')}
+                <textarea
+                  value={p.htmlContent || ''}
+                  onChange={(e) => handleChange('htmlContent', e.target.value)}
+                  disabled={readOnly}
+                  className="bg-bg-hover border border-border-color text-text-primary p-2 px-3 rounded-md text-xs outline-none transition-all focus:border-primary w-full font-mono disabled:opacity-55"
+                  rows={8}
+                />
+              </div>
+            )}
+          </div>
         );
+
       case 'countdown':
         return (
-          <>
-            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">{t('componentCountdown')}</h3>
-            {!isMobileTab && renderField('Fecha Límite (YYYY-MM-DD)', 'endTime', 'text')}
-            {renderField('Color del Texto', 'color', 'color')}
-            {renderField(t('align'), 'align', 'select', ['left', 'center', 'right'])}
-            {renderField(t('padding'), 'padding', 'text')}
-          </>
+          <div className="flex flex-col gap-4">
+            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">Contador Regresivo</h3>
+            {!isMobileTab && (
+              <div className="flex flex-col gap-1.5">
+                {renderLabel('Fecha Límite', 'endTime')}
+                <DateTimePicker value={p.endTime || ''} onChange={(val) => handleChange('endTime', val)} disabled={readOnly} />
+              </div>
+            )}
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Color de Texto', 'color')}
+              <ColorPicker value={p.color || '#ffffff'} onChange={(val) => handleChange('color', val)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Color de Fondo', 'backgroundColor')}
+              <ColorPicker value={p.backgroundColor || '#333333'} onChange={(val) => handleChange('backgroundColor', val)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Alineación', 'align')}
+              <AlignButtonGroup value={p.align || 'center'} options={['left', 'center', 'right']} onChange={(val) => handleChange('align', val as any)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <PaddingEditor value={p.padding || '10px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
+            </div>
+          </div>
         );
+
       case 'accordion':
         return (
-          <>
-            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">{t('componentAccordion')}</h3>
-            {!isMobileTab && renderField('Título del Acordeón', 'title', 'text')}
-            {!isMobileTab && renderField('Contenido Expandido', 'content', 'textarea')}
-            {renderField(t('padding'), 'padding', 'text')}
-          </>
+          <div className="flex flex-col gap-4">
+            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">Acordeón</h3>
+            {!isMobileTab && (
+              <>
+                <div className="flex flex-col gap-1.5">
+                  {renderLabel('Título', 'title')}
+                  <input
+                    type="text"
+                    value={p.title || ''}
+                    onChange={(e) => handleChange('title', e.target.value)}
+                    disabled={readOnly}
+                    className="bg-bg-hover border border-border-color text-text-primary p-2 px-3 rounded-md text-xs outline-none transition-all focus:border-primary w-full disabled:opacity-55"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  {renderLabel('Contenido', 'content')}
+                  <textarea
+                    value={p.content || ''}
+                    onChange={(e) => handleChange('content', e.target.value)}
+                    disabled={readOnly}
+                    className="bg-bg-hover border border-border-color text-text-primary p-2 px-3 rounded-md text-xs outline-none transition-all focus:border-primary w-full disabled:opacity-55"
+                    rows={4}
+                  />
+                </div>
+              </>
+            )}
+            <div className="flex flex-col gap-1.5">
+              <PaddingEditor value={p.padding || '10px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
+            </div>
+          </div>
         );
+
       case 'carousel':
         return (
-          <>
-            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">{t('componentCarousel')}</h3>
-            {!isMobileTab && renderField('Imágenes (URLs separadas por coma)', 'images', 'textarea')}
-            {renderField(t('padding'), 'padding', 'text')}
-          </>
+          <div className="flex flex-col gap-4">
+            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">Carrusel</h3>
+            {!isMobileTab && (
+              <div className="flex flex-col gap-1.5">
+                {renderLabel('Imágenes (URLs por comas)', 'images')}
+                <textarea
+                  value={p.images || ''}
+                  onChange={(e) => handleChange('images', e.target.value)}
+                  disabled={readOnly}
+                  className="bg-bg-hover border border-border-color text-text-primary p-2 px-3 rounded-md text-xs outline-none transition-all focus:border-primary w-full disabled:opacity-55"
+                  rows={4}
+                  placeholder="URL1, URL2, URL3"
+                />
+              </div>
+            )}
+            <div className="flex flex-col gap-1.5">
+              <PaddingEditor value={p.padding || '10px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
+            </div>
+          </div>
         );
+
+      // New blocks settings
+      case 'icon':
+        return (
+          <div className="flex flex-col gap-4">
+            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">Icono</h3>
+            {!isMobileTab && (
+              <div className="flex flex-col gap-1.5">
+                {renderLabel('Nombre de Icono', 'iconName')}
+                <CustomSelect
+                  value={p.iconName || 'Star'}
+                  options={[
+                    { label: '★ Estrella', value: 'Star' },
+                    { label: '❤ Corazón', value: 'Heart' },
+                    { label: '☺ Emoji Sonrisa', value: 'Smile' },
+                    { label: '⚙ Tuerca', value: 'Settings' },
+                    { label: '✉ Correo', value: 'Mail' },
+                    { label: 'ℹ Info', value: 'Info' }
+                  ]}
+                  onChange={(val) => handleChange('iconName', val)}
+                  disabled={readOnly}
+                />
+              </div>
+            )}
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Tamaño', 'size')}
+              <NumberStepper value={p.size || 24} onChange={(val) => handleChange('size', val)} min={16} max={128} unit="px" disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Color', 'color')}
+              <ColorPicker value={p.color || '#4f46e5'} onChange={(val) => handleChange('color', val)} disabled={readOnly} />
+            </div>
+            {!isMobileTab && (
+              <div className="flex flex-col gap-1.5">
+                {renderLabel('Enlace (Opcional)', 'url')}
+                <LinkInput value={p.url || ''} onChange={(val) => handleChange('url', val)} disabled={readOnly} />
+              </div>
+            )}
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Alineación', 'align')}
+              <AlignButtonGroup value={p.align || 'center'} options={['left', 'center', 'right']} onChange={(val) => handleChange('align', val as any)} disabled={readOnly} />
+            </div>
+          </div>
+        );
+
+      case 'nav_menu':
+        return (
+          <div className="flex flex-col gap-4">
+            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">Menú de Navegación</h3>
+            {!isMobileTab && (
+              <div className="flex flex-col gap-1.5">
+                {renderLabel('Items (JSON)', 'items')}
+                <textarea
+                  value={typeof p.items === 'string' ? p.items : JSON.stringify(p.items || [
+                    { label: 'Inicio', url: '#' },
+                    { label: 'Servicios', url: '#' },
+                    { label: 'Contacto', url: '#' }
+                  ], null, 2)}
+                  onChange={(e) => {
+                    try {
+                      const parsed = JSON.parse(e.target.value);
+                      handleChange('items', parsed);
+                    } catch (err) {
+                      handleChange('items', e.target.value); // keep raw string if invalid JSON during typing
+                    }
+                  }}
+                  disabled={readOnly}
+                  className="bg-bg-hover border border-border-color text-text-primary p-2 px-3 rounded-md text-xs outline-none transition-all focus:border-primary w-full font-mono disabled:opacity-55"
+                  rows={5}
+                />
+              </div>
+            )}
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Color de Enlaces', 'color')}
+              <ColorPicker value={p.color || '#4f46e5'} onChange={(val) => handleChange('color', val)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Color de Fondo', 'backgroundColor')}
+              <ColorPicker value={p.backgroundColor || 'transparent'} onChange={(val) => handleChange('backgroundColor', val)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Tipografía', 'fontFamily')}
+              <FontFamilyPicker value={p.fontFamily || 'Arial'} onChange={(val) => handleChange('fontFamily', val)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Tamaño de Texto', 'fontSize')}
+              <NumberStepper value={p.fontSize || 14} onChange={(val) => handleChange('fontSize', val)} min={10} max={24} unit="px" disabled={readOnly} />
+            </div>
+            {!isMobileTab && (
+              <div className="flex flex-col gap-1.5">
+                {renderLabel('Separador', 'separator')}
+                <input
+                  type="text"
+                  value={p.separator || ' | '}
+                  onChange={(e) => handleChange('separator', e.target.value)}
+                  disabled={readOnly}
+                  className="bg-bg-hover border border-border-color text-text-primary p-2 px-3 rounded-md text-xs outline-none transition-all focus:border-primary w-full disabled:opacity-55"
+                />
+              </div>
+            )}
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Alineación', 'align')}
+              <AlignButtonGroup value={p.align || 'center'} options={['left', 'center', 'right']} onChange={(val) => handleChange('align', val as any)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <PaddingEditor value={p.padding || '10px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
+            </div>
+          </div>
+        );
+
+      case 'image_text':
+        return (
+          <div className="flex flex-col gap-4">
+            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">Imagen + Texto</h3>
+            {!isMobileTab && (
+              <>
+                <div className="flex flex-col gap-1.5">
+                  {renderLabel('URL de Imagen', 'imageUrl')}
+                  <LinkInput value={p.imageUrl || ''} onChange={(val) => handleChange('imageUrl', val)} disabled={readOnly} />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  {renderLabel('Contenido de Texto', 'text')}
+                  <textarea
+                    value={p.text || ''}
+                    onChange={(e) => handleChange('text', e.target.value)}
+                    disabled={readOnly}
+                    className="bg-bg-hover border border-border-color text-text-primary p-2 px-3 rounded-md text-xs outline-none transition-all focus:border-primary w-full disabled:opacity-55"
+                    rows={4}
+                  />
+                </div>
+              </>
+            )}
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Posición de Imagen', 'imagePosition')}
+              <CustomSelect
+                value={p.imagePosition || 'left'}
+                options={[
+                  { label: 'Izquierda', value: 'left' },
+                  { label: 'Derecha', value: 'right' }
+                ]}
+                onChange={(val) => handleChange('imagePosition', val)}
+                disabled={readOnly}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Ancho de Imagen', 'imageWidth')}
+              <SliderWithInput value={p.imageWidth || 40} onChange={(val) => handleChange('imageWidth', val)} min={20} max={80} unit="%" disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Tipografía', 'fontFamily')}
+              <FontFamilyPicker value={p.fontFamily || 'Arial'} onChange={(val) => handleChange('fontFamily', val)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Tamaño de Texto', 'fontSize')}
+              <NumberStepper value={p.fontSize || 14} onChange={(val) => handleChange('fontSize', val)} min={10} max={32} unit="px" disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Color de Texto', 'color')}
+              <ColorPicker value={p.color || '#333333'} onChange={(val) => handleChange('color', val)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <PaddingEditor value={p.padding || '10px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
+            </div>
+          </div>
+        );
+
+      case 'product_card':
+        return (
+          <div className="flex flex-col gap-4">
+            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">Tarjeta de Producto</h3>
+            {!isMobileTab && (
+              <>
+                <div className="flex flex-col gap-1.5">
+                  {renderLabel('URL de Imagen', 'imageUrl')}
+                  <LinkInput value={p.imageUrl || ''} onChange={(val) => handleChange('imageUrl', val)} disabled={readOnly} />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  {renderLabel('Título de Producto', 'title')}
+                  <input
+                    type="text"
+                    value={p.title || ''}
+                    onChange={(e) => handleChange('title', e.target.value)}
+                    disabled={readOnly}
+                    className="bg-bg-hover border border-border-color text-text-primary p-2 px-3 rounded-md text-xs outline-none transition-all focus:border-primary w-full disabled:opacity-55"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  {renderLabel('Precio', 'price')}
+                  <input
+                    type="text"
+                    value={p.price || ''}
+                    onChange={(e) => handleChange('price', e.target.value)}
+                    disabled={readOnly}
+                    className="bg-bg-hover border border-border-color text-text-primary p-2 px-3 rounded-md text-xs outline-none transition-all focus:border-primary w-full disabled:opacity-55"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  {renderLabel('Texto del Botón', 'buttonText')}
+                  <input
+                    type="text"
+                    value={p.buttonText || ''}
+                    onChange={(e) => handleChange('buttonText', e.target.value)}
+                    disabled={readOnly}
+                    className="bg-bg-hover border border-border-color text-text-primary p-2 px-3 rounded-md text-xs outline-none transition-all focus:border-primary w-full disabled:opacity-55"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  {renderLabel('Destino Botón', 'buttonUrl')}
+                  <LinkInput value={p.buttonUrl || ''} onChange={(val) => handleChange('buttonUrl', val)} disabled={readOnly} />
+                </div>
+              </>
+            )}
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Color del Botón', 'color')}
+              <ColorPicker value={p.color || '#4f46e5'} onChange={(val) => handleChange('color', val)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Color de Fondo', 'backgroundColor')}
+              <ColorPicker value={p.backgroundColor || '#ffffff'} onChange={(val) => handleChange('backgroundColor', val)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Borde Redondeado', 'borderRadius')}
+              <SliderWithInput value={p.borderRadius || 8} onChange={(val) => handleChange('borderRadius', val)} min={0} max={30} unit="px" disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <PaddingEditor value={p.padding || '15px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
+            </div>
+          </div>
+        );
+
+      case 'quote':
+        return (
+          <div className="flex flex-col gap-4">
+            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">Testimonial / Cita</h3>
+            {!isMobileTab && (
+              <>
+                <div className="flex flex-col gap-1.5">
+                  {renderLabel('Texto de la Cita', 'text')}
+                  <textarea
+                    value={p.text || ''}
+                    onChange={(e) => handleChange('text', e.target.value)}
+                    disabled={readOnly}
+                    className="bg-bg-hover border border-border-color text-text-primary p-2 px-3 rounded-md text-xs outline-none transition-all focus:border-primary w-full disabled:opacity-55"
+                    rows={4}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  {renderLabel('Autor', 'author')}
+                  <input
+                    type="text"
+                    value={p.author || ''}
+                    onChange={(e) => handleChange('author', e.target.value)}
+                    disabled={readOnly}
+                    className="bg-bg-hover border border-border-color text-text-primary p-2 px-3 rounded-md text-xs outline-none transition-all focus:border-primary w-full disabled:opacity-55"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  {renderLabel('Avatar (URL)', 'avatarUrl')}
+                  <LinkInput value={p.avatarUrl || ''} onChange={(val) => handleChange('avatarUrl', val)} disabled={readOnly} />
+                </div>
+              </>
+            )}
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Color de Texto', 'color')}
+              <ColorPicker value={p.color || '#555555'} onChange={(val) => handleChange('color', val)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Color de Fondo', 'backgroundColor')}
+              <ColorPicker value={p.backgroundColor || '#f9f9f9'} onChange={(val) => handleChange('backgroundColor', val)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Borde Redondeado', 'borderRadius')}
+              <SliderWithInput value={p.borderRadius || 4} onChange={(val) => handleChange('borderRadius', val)} min={0} max={30} unit="px" disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <PaddingEditor value={p.padding || '15px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
+            </div>
+          </div>
+        );
+
       default:
         return null;
     }
@@ -258,7 +752,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
   return (
     <aside className="w-[300px] bg-bg-panel border-l border-border-color flex flex-col overflow-y-auto h-full">
       {/* Panel header tabs */}
-      <div className="flex border-b border-border-color">
+      <div className="flex border-b border-border-color shrink-0">
         <button
           className={`flex-1 bg-transparent border-none border-b-2 p-3 text-xs font-semibold cursor-pointer transition-all hover:text-text-primary flex items-center justify-center ${
             activeTab === 'general' ? 'border-b-primary text-primary' : 'border-b-transparent text-text-secondary'
@@ -284,7 +778,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
 
         {/* Delete node option */}
         {!readOnly && (
-          <div className="mt-6 border-t border-border-color pt-5">
+          <div className="mt-6 border-t border-border-color pt-5 shrink-0">
             <button
               onClick={() => onDeleteNode(selectedNode.id)}
               className="w-full bg-red-500/10 text-danger border border-red-500/20 p-2.5 rounded-md text-xs font-semibold cursor-pointer flex items-center justify-center gap-2 transition-all hover:bg-danger hover:text-white hover:border-danger"

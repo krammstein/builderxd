@@ -450,39 +450,31 @@ const App = forwardRef<any, AppProps>(({
 
   const selectedNode = selectedId ? findNode(selectedId) : null;
 
-  // Add Component handler
-  const handleAddComponent = (type: BlockType) => {
-    if (readOnly) return;
-    const newId = `${type}-${Math.random().toString(36).substr(2, 9)}`;
-    let defaultProps: Record<string, any> = {};
-
+  const getDefaultProperties = (type: BlockType): Record<string, any> => {
     switch (type) {
       case 'section':
-        defaultProps = { backgroundColor: '#ffffff', padding: '20px 10px' };
-        break;
+        return { backgroundColor: '#ffffff', padding: '20px 10px', width: 600 };
       case 'column':
-        defaultProps = { width: '100%', padding: '10px' };
-        break;
+        return { width: '100%', padding: '10px' };
       case 'text':
-        defaultProps = {
+        return {
           content: 'Escribe aquí tu texto...',
           color: '#1a1a1a',
           fontSize: '16px',
           align: 'left',
-          padding: '10px 20px'
+          padding: '10px 20px',
+          fontFamily: 'Arial'
         };
-        break;
       case 'image':
-        defaultProps = {
+        return {
           url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=60',
           altText: 'Image description',
           align: 'center',
           borderRadius: '8px',
           padding: '10px 20px'
         };
-        break;
       case 'button':
-        defaultProps = {
+        return {
           content: 'Haga clic aquí',
           url: 'https://example.com',
           backgroundColor: '#4F46E5',
@@ -491,32 +483,86 @@ const App = forwardRef<any, AppProps>(({
           align: 'center',
           padding: '12px 24px'
         };
-        break;
       case 'divider':
-        defaultProps = { color: '#e5e7eb', thickness: '2px', padding: '15px 20px' };
-        break;
+        return { color: '#e5e7eb', thickness: '2px', padding: '15px 20px', style: 'solid' };
       case 'spacer':
-        defaultProps = { height: '30px' };
-        break;
+        return { height: '30px' };
       case 'social':
-        defaultProps = { align: 'center', padding: '15px 20px' };
-        break;
+        return { align: 'center', padding: '15px 20px' };
       case 'video':
-        defaultProps = { thumbnailUrl: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800&auto=format&fit=crop&q=60', videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', align: 'center', padding: '10px 20px' };
-        break;
+        return {
+          thumbnailUrl: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800&auto=format&fit=crop&q=60',
+          videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+          align: 'center',
+          padding: '10px 20px'
+        };
       case 'custom_html':
-        defaultProps = { htmlContent: '<div style="padding: 20px; text-align: center; border: 2px dashed #ccc; font-family: sans-serif; font-size: 13px; color: #666;">HTML Personalizado</div>' };
-        break;
+        return { htmlContent: '<div style="padding: 20px; text-align: center; border: 2px dashed #ccc; font-family: sans-serif; font-size: 13px; color: #666;">HTML Personalizado</div>' };
       case 'countdown':
-        defaultProps = { endTime: '2026-12-31', color: '#111827', align: 'center', padding: '15px 20px' };
-        break;
+        return { endTime: '2026-12-31T18:00:00', color: '#111827', align: 'center', padding: '15px 20px' };
       case 'accordion':
-        defaultProps = { title: 'Título del Acordeón', content: 'Detalles del acordeón...', padding: '10px 20px' };
-        break;
+        return { title: 'Título del Acordeón', content: 'Detalles del acordeón...', padding: '10px 20px' };
       case 'carousel':
-        defaultProps = { images: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=60,https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800&auto=format&fit=crop&q=60', padding: '10px 20px' };
-        break;
+        return {
+          images: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=60,https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800&auto=format&fit=crop&q=60',
+          padding: '10px 20px'
+        };
+      case 'icon':
+        return { iconName: 'Star', size: 24, color: '#4f46e5', align: 'center', url: '' };
+      case 'nav_menu':
+        return {
+          items: [
+            { label: 'Inicio', url: '#' },
+            { label: 'Servicios', url: '#' },
+            { label: 'Contacto', url: '#' }
+          ],
+          color: '#4f46e5',
+          align: 'center',
+          separator: ' | ',
+          padding: '10px'
+        };
+      case 'image_text':
+        return {
+          imageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=60',
+          text: 'Texto descriptivo de ejemplo al lado de la imagen.',
+          imageWidth: 40,
+          imagePosition: 'left',
+          fontFamily: 'Arial',
+          fontSize: '14px',
+          color: '#333333',
+          padding: '10px'
+        };
+      case 'product_card':
+        return {
+          imageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=60',
+          title: 'Producto de Ejemplo',
+          price: '$99.99',
+          buttonText: 'Comprar Ahora',
+          buttonUrl: '#',
+          color: '#4f46e5',
+          backgroundColor: '#ffffff',
+          borderRadius: 8,
+          padding: '15px'
+        };
+      case 'quote':
+        return {
+          text: 'Esta es una excelente recomendación o testimonio de un cliente satisfecho.',
+          author: 'Juan Pérez',
+          color: '#555555',
+          backgroundColor: '#f9f9f9',
+          borderRadius: 4,
+          padding: '15px'
+        };
+      default:
+        return {};
     }
+  };
+
+  // Add Component handler
+  const handleAddComponent = (type: BlockType) => {
+    if (readOnly) return;
+    const newId = `${type}-${Math.random().toString(36).substr(2, 9)}`;
+    const defaultProps = getDefaultProperties(type);
 
     const newBlock: BlockNode = {
       id: newId,
@@ -704,54 +750,7 @@ const App = forwardRef<any, AppProps>(({
     if (readOnly) return;
 
     const newId = `${blockType}-${Math.random().toString(36).substr(2, 9)}`;
-    let defaultProps: Record<string, any> = {};
-
-    switch (blockType) {
-      case 'section':
-        defaultProps = { backgroundColor: '#ffffff', padding: '20px 10px' };
-        break;
-      case 'column':
-        defaultProps = { width: '100%', padding: '10px' };
-        break;
-      case 'text':
-        defaultProps = {
-          content: 'Escribe aquí tu texto...',
-          color: '#1a1a1a',
-          fontSize: '16px',
-          align: 'left',
-          padding: '10px 20px'
-        };
-        break;
-      case 'image':
-        defaultProps = {
-          url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=60',
-          altText: 'Image description',
-          align: 'center',
-          borderRadius: '8px',
-          padding: '10px 20px'
-        };
-        break;
-      case 'button':
-        defaultProps = {
-          content: 'Haga clic aquí',
-          url: 'https://example.com',
-          backgroundColor: '#4F46E5',
-          color: '#ffffff',
-          borderRadius: '6px',
-          align: 'center',
-          padding: '12px 24px'
-        };
-        break;
-      case 'divider':
-        defaultProps = { color: '#e5e7eb', thickness: '2px', padding: '15px 20px' };
-        break;
-      case 'spacer':
-        defaultProps = { height: '30px' };
-        break;
-      case 'social':
-        defaultProps = { align: 'center', padding: '15px 20px' };
-        break;
-    }
+    const defaultProps = getDefaultProperties(blockType);
 
     const newBlock: BlockNode = {
       id: newId,

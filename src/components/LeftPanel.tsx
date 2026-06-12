@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useTranslation } from '../context/LanguageContext';
 import type { BlockType, BlockNode } from '../types';
 import {
   Type,
@@ -19,7 +18,13 @@ import {
   Code,
   Clock,
   Menu,
-  Images
+  Images,
+  Star,
+  FolderOpen,
+  LayoutGrid,
+  FileText,
+  User,
+  ShoppingBag
 } from 'lucide-react';
 
 interface LeftPanelProps {
@@ -41,23 +46,30 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
   onMoveNode,
   readOnly = false
 }) => {
-  const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState<'components' | 'layers' | 'assets'>('components');
   const [searchQuery, setSearchQuery] = useState('');
+  const [collapsedLayers, setCollapsedLayers] = useState<Record<string, boolean>>({});
 
   const availableComponents = [
-    { type: 'section' as BlockType, label: t('componentSection'), desc: 'Contenedor de ancho completo', icon: <Layout size={18} /> },
-    { type: 'column' as BlockType, label: t('componentColumn'), desc: 'Divisor de columnas en sección', icon: <Columns size={18} /> },
-    { type: 'text' as BlockType, label: t('componentText'), desc: 'Texto con tipografías y colores', icon: <Type size={18} /> },
-    { type: 'image' as BlockType, label: t('componentImage'), desc: 'Imagen adaptable con enlaces', icon: <Image size={18} /> },
-    { type: 'button' as BlockType, label: t('componentButton'), desc: 'Botón con enlace personalizable', icon: <Square size={18} /> },
-    { type: 'divider' as BlockType, label: t('componentDivider'), desc: 'Línea separadora de contenido', icon: <Minus size={18} /> },
-    { type: 'spacer' as BlockType, label: t('componentSpacer'), desc: 'Espacio vertical de relleno', icon: <MoveVertical size={18} /> },
-    { type: 'social' as BlockType, label: t('componentSocial'), desc: 'Enlaces a redes sociales', icon: <Share2 size={18} /> },
-    { type: 'video' as BlockType, label: t('componentVideo'), desc: 'Enlace de vídeo con miniatura', icon: <Video size={18} /> },
-    { type: 'custom_html' as BlockType, label: t('componentCustomHtml'), desc: 'Código HTML incrustado', icon: <Code size={18} /> },
-    { type: 'countdown' as BlockType, label: t('componentCountdown'), desc: 'Contador de tiempo regresivo', icon: <Clock size={18} /> },
-    { type: 'accordion' as BlockType, label: t('componentAccordion'), desc: 'Acordeón de contenido plegable', icon: <Menu size={18} /> },
-    { type: 'carousel' as BlockType, label: t('componentCarousel'), desc: 'Carrusel de imágenes deslizables', icon: <Images size={18} /> }
+    { type: 'section' as BlockType, label: 'Sección', icon: <Layout size={24} /> },
+    { type: 'column' as BlockType, label: 'Columna', icon: <Columns size={24} /> },
+    { type: 'text' as BlockType, label: 'Texto', icon: <Type size={24} /> },
+    { type: 'image' as BlockType, label: 'Imagen', icon: <Image size={24} /> },
+    { type: 'button' as BlockType, label: 'Botón', icon: <Square size={24} /> },
+    { type: 'divider' as BlockType, label: 'Divisor', icon: <Minus size={24} /> },
+    { type: 'spacer' as BlockType, label: 'Espaciador', icon: <MoveVertical size={24} /> },
+    { type: 'social' as BlockType, label: 'Redes', icon: <Share2 size={24} /> },
+    { type: 'video' as BlockType, label: 'Vídeo', icon: <Video size={24} /> },
+    { type: 'custom_html' as BlockType, label: 'HTML', icon: <Code size={24} /> },
+    { type: 'countdown' as BlockType, label: 'Contador', icon: <Clock size={24} /> },
+    { type: 'accordion' as BlockType, label: 'Acordeón', icon: <Menu size={24} /> },
+    { type: 'carousel' as BlockType, label: 'Carrusel', icon: <Images size={24} /> },
+    // New components
+    { type: 'icon' as BlockType, label: 'Icono', icon: <Star size={24} /> },
+    { type: 'nav_menu' as BlockType, label: 'Menú Nav', icon: <Menu size={24} /> },
+    { type: 'image_text' as BlockType, label: 'Img + Texto', icon: <FileText size={24} /> },
+    { type: 'product_card' as BlockType, label: 'Producto', icon: <ShoppingBag size={24} /> },
+    { type: 'quote' as BlockType, label: 'Cita', icon: <User size={24} /> }
   ];
 
   const filteredComponents = availableComponents.filter((comp) =>
@@ -65,9 +77,14 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
     comp.type.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Helper to recursively render layers in tree
+  const toggleCollapse = (id: string) => {
+    setCollapsedLayers(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
   const renderLayerItem = (node: BlockNode, depth: number = 0): React.ReactNode => {
     const isSelected = node.id === selectedId;
+    const hasChildren = node.children && node.children.length > 0;
+    const isCollapsed = collapsedLayers[node.id];
     const displayName = availableComponents.find((c) => c.type === node.type)?.label || node.type;
 
     return (
@@ -82,20 +99,30 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
             onSelectNode(node.id);
           }}
         >
-          <span className={`mr-2 flex items-center ${isSelected ? 'text-primary' : 'text-text-secondary'}`}>
-            {availableComponents.find((c) => c.type === node.type)?.icon}
+          {hasChildren && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleCollapse(node.id);
+              }}
+              className="bg-transparent border-none text-text-muted mr-1 cursor-pointer"
+            >
+              <span className="text-[10px]">{isCollapsed ? '▶' : '▼'}</span>
+            </button>
+          )}
+          <span className={`mr-2 flex items-center shrink-0 ${isSelected ? 'text-primary' : 'text-text-muted'}`}>
+            {React.cloneElement(availableComponents.find((c) => c.type === node.type)?.icon || <Layout size={14} />, { size: 14 })}
           </span>
           <span className="text-xs font-medium truncate flex-1">{displayName}</span>
 
           {!readOnly && (
-            <div className="hidden group-hover:flex items-center gap-0.5">
+            <div className="hidden group-hover:flex items-center gap-0.5 shrink-0">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   onMoveNode(node.id, 'up');
                 }}
-                title={t('moveUp')}
-                className="bg-transparent border-none text-text-muted p-1 rounded-xs cursor-pointer flex items-center justify-center transition-all hover:bg-border-color hover:text-text-primary"
+                className="bg-transparent border-none text-text-muted p-0.5 rounded-xs cursor-pointer hover:bg-border-color hover:text-text-primary"
               >
                 <ChevronUp size={12} />
               </button>
@@ -104,8 +131,7 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
                   e.stopPropagation();
                   onMoveNode(node.id, 'down');
                 }}
-                title={t('moveDown')}
-                className="bg-transparent border-none text-text-muted p-1 rounded-xs cursor-pointer flex items-center justify-center transition-all hover:bg-border-color hover:text-text-primary"
+                className="bg-transparent border-none text-text-muted p-0.5 rounded-xs cursor-pointer hover:bg-border-color hover:text-text-primary"
               >
                 <ChevronDown size={12} />
               </button>
@@ -114,69 +140,132 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
                   e.stopPropagation();
                   onDeleteNode(node.id);
                 }}
-                title={t('deleteBlock')}
-                className="bg-transparent border-none text-text-muted p-1 rounded-xs cursor-pointer flex items-center justify-center transition-all hover:bg-red-500/15 hover:text-red-500"
+                className="bg-transparent border-none text-text-muted p-0.5 rounded-xs cursor-pointer hover:bg-red-500/15 hover:text-red-500"
               >
                 <Trash2 size={12} />
               </button>
             </div>
           )}
         </div>
-        {node.children && node.children.map((child) => renderLayerItem(child, depth + 1))}
+        {hasChildren && !isCollapsed && (
+          <div className="flex flex-col">
+            {node.children!.map((child) => renderLayerItem(child, depth + 1))}
+          </div>
+        )}
       </div>
     );
   };
 
   return (
-    <aside className="w-[300px] bg-bg-panel border-r border-border-color flex flex-col overflow-y-auto h-full">
-      {/* Component Library section */}
-      <div className="p-5 border-b border-border-color">
-        <h2 className="text-sm font-semibold text-text-primary mb-3">{t('components')}</h2>
-        <div className="flex items-center bg-bg-hover border border-border-color rounded-md p-2 px-3 gap-2 mb-4">
-          <Search size={16} className="text-text-muted" />
-          <input
-            type="text"
-            placeholder={t('searchComponents')}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-transparent border-none text-text-primary text-xs outline-none w-full"
-          />
-        </div>
+    <aside className="w-[344px] bg-bg-panel border-r border-border-color flex h-full select-none overflow-hidden shrink-0">
+      {/* 5.2 Vertical Tabs Sidebar (44px wide) */}
+      <div className="w-11 border-r border-border-color/65 bg-bg-panel flex flex-col items-center py-4 gap-4 shrink-0">
+        <button
+          onClick={() => setActiveTab('components')}
+          className={`p-2 rounded-lg cursor-pointer transition-all border-none outline-none ${
+            activeTab === 'components' ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text-primary'
+          }`}
+          title="Componentes"
+          id="tab-btn-components"
+        >
+          <LayoutGrid size={20} />
+        </button>
 
-        <div className="flex flex-col gap-2">
-          {filteredComponents.map((comp) => (
-            <div
-              key={comp.type}
-              className="flex items-center p-2.5 border border-border-color rounded-lg cursor-pointer transition-all hover:bg-bg-hover hover:border-primary hover:-translate-y-0.5 gap-3 group"
-              onClick={() => onAddComponent(comp.type)}
-              draggable={!readOnly}
-              onDragStart={(e) => e.dataTransfer.setData('text/plain', comp.type)}
-            >
-              <div className="bg-bg-hover text-primary p-2 rounded-md flex items-center justify-center transition-colors group-hover:bg-primary/10">
-                {comp.icon}
-              </div>
-              <div>
-                <h3 className="text-xs font-semibold text-text-primary mb-0.5">{comp.label}</h3>
-                <p className="text-[10px] text-text-muted">{comp.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+        <button
+          onClick={() => setActiveTab('layers')}
+          className={`p-2 rounded-lg cursor-pointer transition-all border-none outline-none ${
+            activeTab === 'layers' ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text-primary'
+          }`}
+          title="Capas / Layers"
+          id="tab-btn-layers"
+        >
+          <Layers size={20} />
+        </button>
+
+        <button
+          onClick={() => setActiveTab('assets')}
+          className={`p-2 rounded-lg cursor-pointer transition-all border-none outline-none ${
+            activeTab === 'assets' ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text-primary'
+          }`}
+          title="Recursos / Assets"
+          id="tab-btn-assets"
+        >
+          <FolderOpen size={20} />
+        </button>
       </div>
 
-      {/* Layers Tree section */}
-      <div className="p-5 flex-1 flex flex-col border-b-0 overflow-hidden">
-        <div className="flex items-center gap-2 mb-3 text-text-primary text-sm font-semibold">
-          <Layers size={16} />
-          <h2>{t('layers')}</h2>
-        </div>
-        <div className="flex-1 overflow-y-auto">
-          {nodes.length === 0 ? (
-            <p className="text-xs text-text-muted text-center mt-5">Crea secciones para estructurar tu correo.</p>
-          ) : (
-            nodes.map((node) => renderLayerItem(node, 0))
-          )}
-        </div>
+      {/* Main content area (300px wide) */}
+      <div className="flex-1 flex flex-col overflow-hidden h-full">
+        {activeTab === 'components' && (
+          <div className="p-4 flex flex-col overflow-y-auto flex-1 h-full gap-4">
+            <div>
+              <h2 className="text-sm font-semibold text-text-primary mb-2.5">Librería de Componentes</h2>
+              <div className="flex items-center bg-bg-hover border border-border-color rounded-md p-2 px-3 gap-2">
+                <Search size={14} className="text-text-muted shrink-0" />
+                <input
+                  type="text"
+                  placeholder="Buscar componentes..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="bg-transparent border-none text-text-primary text-xs outline-none w-full"
+                  id="comp-search"
+                />
+              </div>
+            </div>
+
+            {/* 5.1 Grid 2 Columns for available draggable components */}
+            <div className="grid grid-cols-2 gap-3.5 pb-4">
+              {filteredComponents.map((comp) => (
+                <div
+                  key={comp.type}
+                  className="flex flex-col items-center justify-center p-3.5 border border-border-color rounded-lg cursor-grab transition-all hover:bg-bg-hover hover:border-primary active:cursor-grabbing group bg-bg-panel text-center select-none"
+                  onClick={() => onAddComponent(comp.type)}
+                  draggable={!readOnly}
+                  onDragStart={(e) => e.dataTransfer.setData('text/plain', comp.type)}
+                  id={`block-item-${comp.type}`}
+                >
+                  <div className="text-primary mb-2 bg-bg-hover p-3 rounded-lg group-hover:bg-primary/10 transition-colors">
+                    {comp.icon}
+                  </div>
+                  <span className="text-[11.5px] font-medium text-text-primary truncate w-full">{comp.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'layers' && (
+          <div className="p-4 flex-1 flex flex-col overflow-hidden h-full">
+            <h2 className="text-sm font-semibold text-text-primary mb-3.5">Árbol de Capas</h2>
+            <div className="flex-1 overflow-y-auto">
+              {nodes.length === 0 ? (
+                <p className="text-xs text-text-muted text-center mt-5">Arrastra componentes al canvas central.</p>
+              ) : (
+                <div className="flex flex-col">
+                  {/* Collapsible Design node wrapper */}
+                  <div className="flex items-center p-2 rounded-md mb-0.5 text-text-primary font-bold text-xs bg-bg-hover border border-border-color/20">
+                    <span className="mr-2 text-primary">⚡</span>
+                    <span>Design System Layers</span>
+                  </div>
+                  <div className="pl-2.5 pt-1.5 border-l border-border-color/40 ml-4">
+                    {nodes.map((node) => renderLayerItem(node, 0))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'assets' && (
+          <div className="p-4 flex-1 flex flex-col overflow-hidden h-full">
+            <h2 className="text-sm font-semibold text-text-primary mb-3.5">Gestor de Recursos</h2>
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-5 text-text-muted gap-2">
+              <FolderOpen size={36} className="text-text-muted/60" />
+              <p className="text-xs">No hay imágenes o recursos locales subidos aún.</p>
+              <span className="text-[10px] text-text-muted/50">Usa las integraciones del menú superior.</span>
+            </div>
+          </div>
+        )}
       </div>
     </aside>
   );

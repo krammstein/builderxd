@@ -117,6 +117,63 @@ ${indent}</mj-accordion>\n`;
         carouselStr += `${indent}</mj-carousel>\n`;
         return carouselStr;
       }
+      case 'icon': {
+        const iconName = props.iconName || 'Star';
+        const size = props.size || 24;
+        const color = props.color || '#4f46e5';
+        const align = props.align || 'center';
+        const href = props.url ? ` href="${props.url}"` : '';
+        return `${indent}<mj-text align="${align}" color="${color}" font-size="${size}px"${href}>${iconName === 'Star' ? '★' : iconName === 'Heart' ? '♥' : iconName === 'Smile' ? '☺' : iconName === 'Settings' ? '⚙' : iconName === 'Mail' ? '✉' : 'ℹ'}</mj-text>\n`;
+      }
+      case 'nav_menu': {
+        const align = props.align || 'center';
+        const color = props.color || '#4f46e5';
+        const items = Array.isArray(props.items) ? props.items : [];
+        let navStr = `${indent}<mj-navbar align="${align}">\n`;
+        items.forEach((item: any) => {
+          navStr += `${indent}  <mj-navbar-link href="${item.url || '#'}" color="${color}">${item.label || 'Link'}</mj-navbar-link>\n`;
+        });
+        navStr += `${indent}</mj-navbar>\n`;
+        return navStr;
+      }
+      case 'image_text': {
+        const imgUrl = props.imageUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=60';
+        const text = props.text || 'Texto descriptivo al lado de la imagen.';
+        const imgWidth = props.imageWidth || 40;
+        const pos = props.imagePosition || 'left';
+        
+        const imgCol = `${indent}  <mj-column width="${imgWidth}%"><mj-image src="${imgUrl}" /></mj-column>\n`;
+        const textCol = `${indent}  <mj-column width="${100 - imgWidth}%"><mj-text>${text}</mj-text></mj-column>\n`;
+        
+        return `${indent}<mj-section>\n${pos === 'left' ? imgCol + textCol : textCol + imgCol}${indent}</mj-section>\n`;
+      }
+      case 'product_card': {
+        const imgUrl = props.imageUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=60';
+        const title = props.title || 'Título Producto';
+        const price = props.price || '$10.00';
+        const btnText = props.buttonText || 'Comprar';
+        const btnUrl = props.buttonUrl || '#';
+        const color = props.color || '#4f46e5';
+        return `${indent}<mj-section background-color="${props.backgroundColor || '#ffffff'}" padding="${props.padding || '15px'}">
+${indent}  <mj-column>
+${indent}    <mj-image src="${imgUrl}" width="150px" />
+${indent}    <mj-text align="center" font-size="16px" font-weight="bold">${title}</mj-text>
+${indent}    <mj-text align="center" font-size="14px" color="#666666">${price}</mj-text>
+${indent}    <mj-button href="${btnUrl}" background-color="${color}">${btnText}</mj-button>
+${indent}  </mj-column>
+${indent}</mj-section>\n`;
+      }
+      case 'quote': {
+        const text = props.text || 'Esta es una excelente cita o testimonio.';
+        const author = props.author || 'Autor de Cita';
+        const color = props.color || '#555555';
+        return `${indent}<mj-section background-color="${props.backgroundColor || '#f9f9f9'}" padding="${props.padding || '15px'}">
+${indent}  <mj-column>
+${indent}    <mj-text font-style="italic" color="${color}" align="center">"${text}"</mj-text>
+${indent}    <mj-text font-weight="bold" align="center">- ${author}</mj-text>
+${indent}  </mj-column>
+${indent}</mj-section>\n`;
+      }
       default:
         return '';
     }
@@ -348,6 +405,100 @@ export const compileToHTML = (
               `).join('')}
             </div>
             <div style="font-size: 9px; color: #9ca3af; margin-top: 4px;">Carrusel de ${imagesList.length} imágenes (Vista Compacta)</div>
+          </div>
+        `;
+      }
+      case 'icon': {
+        const iconName = node.properties.iconName || 'Star';
+        const size = getResponsiveStyle(node, 'size', '24px');
+        const color = getResponsiveStyle(node, 'color', '#4f46e5');
+        const align = getResponsiveStyle(node, 'align', 'center');
+        const url = node.properties.url || '#';
+        const iconChar = iconName === 'Star' ? '★' : iconName === 'Heart' ? '♥' : iconName === 'Smile' ? '☺' : iconName === 'Settings' ? '⚙' : iconName === 'Mail' ? '✉' : 'ℹ';
+        return `
+          <div data-id="${node.id}" class="builder-element${isSelectedClass}" style="text-align: ${align}; padding: 10px 20px; box-sizing: border-box;">
+            <a href="${url}" style="text-decoration: none; color: ${color}; font-size: ${size};" target="_blank">
+              ${iconChar}
+            </a>
+          </div>
+        `;
+      }
+      case 'nav_menu': {
+        const align = getResponsiveStyle(node, 'align', 'center');
+        const color = getResponsiveStyle(node, 'color', '#4f46e5');
+        const bg = getResponsiveStyle(node, 'backgroundColor', 'transparent');
+        const font = getResponsiveStyle(node, 'fontFamily', 'Arial');
+        const size = getResponsiveStyle(node, 'fontSize', '14px');
+        const separator = node.properties.separator || ' | ';
+        const padding = getResponsiveStyle(node, 'padding', '10px');
+        const items = Array.isArray(node.properties.items) ? node.properties.items : [];
+        return `
+          <div data-id="${node.id}" class="builder-element${isSelectedClass}" style="text-align: ${align}; background-color: ${bg}; padding: ${padding}; font-family: ${font}; font-size: ${size}; box-sizing: border-box;">
+            ${items.map((item: any, idx: number) => `
+              <a href="${item.url || '#'}" style="color: ${color}; text-decoration: none; font-weight: 500;">${item.label || 'Link'}</a>
+              ${idx < items.length - 1 ? `<span style="color: #9ca3af; margin: 0 4px;">${separator}</span>` : ''}
+            `).join('')}
+          </div>
+        `;
+      }
+      case 'image_text': {
+        const imgUrl = getResponsiveStyle(node, 'imageUrl', 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=60');
+        const text = node.properties.text || 'Texto descriptivo de ejemplo.';
+        const imgWidth = getResponsiveStyle(node, 'imageWidth', '40');
+        const pos = node.properties.imagePosition || 'left';
+        const font = getResponsiveStyle(node, 'fontFamily', 'Arial');
+        const size = getResponsiveStyle(node, 'fontSize', '14px');
+        const color = getResponsiveStyle(node, 'color', '#333333');
+        const padding = getResponsiveStyle(node, 'padding', '10px');
+        
+        const isRight = pos === 'right';
+        return `
+          <div data-id="${node.id}" class="builder-element${isSelectedClass}" style="padding: ${padding}; box-sizing: border-box; font-family: ${font}; font-size: ${size}; color: ${color}; display: flex; flex-direction: ${isMobile ? 'column' : isRight ? 'row-reverse' : 'row'}; align-items: center; gap: 15px;">
+            <div style="width: ${isMobile ? '100%' : imgWidth + '%'}; shrink: 0;">
+              <img src="${imgUrl}" style="max-width: 100%; height: auto; border-radius: 4px; display: block;" />
+            </div>
+            <div style="flex: 1; min-width: 0;">
+              ${text}
+            </div>
+          </div>
+        `;
+      }
+      case 'product_card': {
+        const imgUrl = getResponsiveStyle(node, 'imageUrl', 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=60');
+        const title = node.properties.title || 'Título Producto';
+        const price = node.properties.price || '$10.00';
+        const btnText = node.properties.buttonText || 'Comprar';
+        const btnUrl = node.properties.buttonUrl || '#';
+        const color = getResponsiveStyle(node, 'color', '#4f46e5');
+        const bg = getResponsiveStyle(node, 'backgroundColor', '#ffffff');
+        const radius = getResponsiveStyle(node, 'borderRadius', '8px');
+        const padding = getResponsiveStyle(node, 'padding', '15px');
+        return `
+          <div data-id="${node.id}" class="builder-element${isSelectedClass}" style="padding: ${padding}; box-sizing: border-box;">
+            <div style="background-color: ${bg}; border-radius: ${radius}; border: 1px solid #e5e7eb; padding: 15px; text-align: center; font-family: Arial, sans-serif;">
+              <img src="${imgUrl}" style="max-width: 150px; height: auto; border-radius: 4px; margin: 0 auto 10px; display: block;" />
+              <h4 style="margin: 0 0 5px; font-size: 16px; color: #1f2937; font-weight: bold;">${title}</h4>
+              <p style="margin: 0 0 12px; font-size: 14px; color: #6b7280;">${price}</p>
+              <a href="${btnUrl}" style="background-color: ${color}; color: #ffffff; padding: 8px 16px; border-radius: 4px; display: inline-block; text-decoration: none; font-size: 13px; font-weight: 500;" target="_blank">
+                ${btnText}
+              </a>
+            </div>
+          </div>
+        `;
+      }
+      case 'quote': {
+        const text = node.properties.text || 'Esta es una excelente cita o testimonio.';
+        const author = node.properties.author || 'Autor de Cita';
+        const color = getResponsiveStyle(node, 'color', '#555555');
+        const bg = getResponsiveStyle(node, 'backgroundColor', '#f9f9f9');
+        const radius = getResponsiveStyle(node, 'borderRadius', '4px');
+        const padding = getResponsiveStyle(node, 'padding', '15px');
+        return `
+          <div data-id="${node.id}" class="builder-element${isSelectedClass}" style="padding: ${padding}; box-sizing: border-box;">
+            <div style="background-color: ${bg}; border-radius: ${radius}; padding: 20px; text-align: center; font-family: Arial, sans-serif; border-left: 4px solid #4f46e5;">
+              <p style="margin: 0 0 8px; font-style: italic; color: ${color}; font-size: 15px; line-height: 1.5;">"${text}"</p>
+              <h5 style="margin: 0; font-size: 13px; color: #1f2937; font-weight: bold;">- ${author}</h5>
+            </div>
           </div>
         `;
       }

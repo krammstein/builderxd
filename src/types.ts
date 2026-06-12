@@ -11,7 +11,12 @@ export type BlockType =
   | 'custom_html'
   | 'countdown'
   | 'accordion'
-  | 'carousel';
+  | 'carousel'
+  | 'icon'
+  | 'nav_menu'
+  | 'image_text'
+  | 'product_card'
+  | 'quote';
 
 export interface BlockNode {
   id: string;
