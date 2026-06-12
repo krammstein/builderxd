@@ -23,6 +23,7 @@ Format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 - **Template Mode Toggle**: HTML | MJML selector above the left component library. In HTML mode, MJML-exclusive structure containers are disabled.
 - **Clear Canvas Action**: Added a "Limpiar" button at the top of the component library panel to empty the editor content after confirmation.
 - **UI Configuration Prop**: Introduced `uiConfig` to toggle the visibility of individual interface buttons/headers (import, export, send test, themes, language, viewport sizes, clear button, mode toggle).
+- **Google Fonts & Typography**: Added a broader selection of the top 20+ most popular Google Fonts. Exposed a `googleFonts` prop to make the available fonts customizable. Automatically injected necessary `<link>` and `<mj-font>` stylesheet imports in the compiled HTML and MJML outputs and preloaded font face previews in the dropdown selection.
 - **Custom File Manager Component**: Added `assetManagerComponent` prop and file manager action trigger next to asset URL inputs, allowing developers to inject a custom file browser component directly.
 
 ### Files Changed
