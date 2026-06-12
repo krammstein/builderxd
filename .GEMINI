@@ -1,0 +1,25 @@
+# BuilderXD Context
+
+## Project Overview
+BuilderXD is a flexible and powerful email and page builder application built with React, TypeScript, and Vite. It is designed to compile templates dynamically, support drag-and-drop actions, and provide a premium user experience with modern aesthetics.
+
+## Technology Stack
+- **Core:** React (TypeScript) + Vite
+- **Styling:** Vanilla CSS (TailwindCSS not requested)
+- **State Management:** React hooks / Context API (or state libraries as required)
+
+## Key Features & Requirements
+1. **Sandboxed Iframe Canvas:** Render preview inside a sandboxed iframe with postMessage communication for live editing.
+2. **Performance Optimizations:** Dedicated Web Worker for MJML compilation, lazy-rendering of off-screen components, and smooth drag-and-drop.
+3. **Responsive Controls:** Desktop/Mobile/Tablet toggle with specific mobile overrides (padding, fonts, visibility).
+4. **Localization (i18n):** Multi-language template switching and UI translation with a language selector.
+5. **Theme Support:** Dark / Light theme toggle.
+6. **Import/Export Options:** MJML, inline HTML, HTML with style tag, ZIP. Direct push to connected ESPs.
+7. **Developer Extensibility:** Custom Blocks SDK for custom component registration.
+8. **Email QA / Deliverability:** Size limits warning (Gmail 102 KB clipping prevention), link checker, and accessibility validation.
+9. **Collaboration (Future):** Comments and multiplayer editing support.
+10. **AI Integration (Delayed):** Text generation, translation, and image optimization using AI (implemented at the very end).
+
+## Working Branches
+- `main`: Clean initialization only.
+- `dev`: Active development branch.
