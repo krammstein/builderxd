@@ -6,7 +6,12 @@ export type BlockType =
   | 'button'
   | 'divider'
   | 'spacer'
-  | 'social';
+  | 'social'
+  | 'video'
+  | 'custom_html'
+  | 'countdown'
+  | 'accordion'
+  | 'carousel';
 
 export interface BlockNode {
   id: string;
@@ -78,4 +83,26 @@ export interface TranslationDict {
   componentSocial: string;
   componentSection: string;
   componentColumn: string;
+  componentVideo: string;
+  componentCustomHtml: string;
+  componentCountdown: string;
+  componentAccordion: string;
+  componentCarousel: string;
+}
+
+export interface FileManagerProvider {
+  id: string;
+  name: string;
+  icon?: string;
+  authType?: 'oauth' | 'apikey' | 'none';
+  onAuth?: () => Promise<void>;
+  onBrowse?: (path?: string) => Promise<any>;
+  onUpload?: (file: any, path?: string) => Promise<any>;
+}
+
+export interface ESPIntegration {
+  id: string;
+  name: string;
+  onPush?: (html: string, mjml: string) => Promise<any>;
+  onPull?: (templateId: string) => Promise<any>;
 }

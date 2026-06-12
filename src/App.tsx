@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { Header } from './components/Header';
 import { LeftPanel } from './components/LeftPanel';
 import { InspectorPanel } from './components/InspectorPanel';
 import { Canvas } from './components/Canvas';
 import { CodeDrawer } from './components/CodeDrawer';
-import type { BlockNode, BlockType, DeviceMode } from './types';
+import type { BlockNode, BlockType, DeviceMode, FileManagerProvider, ESPIntegration } from './types';
 
 import { compileToMJML, compileToHTML } from './utils/compiler';
 import { useTranslation } from './context/LanguageContext';
@@ -25,6 +25,8 @@ export interface AppProps {
     borderRadius?: number;
     darkMode?: boolean;
   };
+  fileManagerProviders?: FileManagerProvider[];
+  espIntegrations?: ESPIntegration[];
 }
 
 
@@ -154,15 +156,17 @@ const INITIAL_TEMPLATE: BlockNode[] = [
   }
 ];
 
-function App({
+const App = forwardRef<any, AppProps>(({
   initialTemplate,
   responsive,
   onSave,
   onExport,
   onTemplateChange,
   readOnly = false,
-  theme
-}: AppProps) {
+  theme,
+  fileManagerProviders = [],
+  espIntegrations = []
+}, ref) => {
   const { t } = useTranslation();
   const { setTheme } = useTheme();
 
@@ -192,6 +196,39 @@ function App({
     }
   }, [theme?.darkMode, setTheme]);
 
+  // Expose API Imperativa via ref handle
+  useImperativeHandle(ref, () => ({
+    undo: handleUndo,
+    redo: handleRedo,
+    getCode: () => ({
+      mjml: mjmlCode,
+      html: htmlCode,
+      mode: 'mjml'
+    }),
+    setCode: (code: string) => {
+      try {
+        const parsed = JSON.parse(code);
+        if (Array.isArray(parsed)) {
+          updateNodesAndHistory(parsed);
+        }
+      } catch (e) {
+        // Fallback or handle MJML
+      }
+    },
+    exportTemplate: async (format: 'mjml' | 'html' | 'zip') => {
+      if (format === 'mjml') return mjmlCode;
+      if (format === 'html') return htmlCode;
+      return htmlCode;
+    },
+    sendTest: (emails: string[]) => {
+      setTestEmails(emails.join(', '));
+      setIsSendTestOpen(true);
+      setTimeout(() => {
+        handleSendTest();
+      }, 500);
+    }
+  }));
+
   const customStyles = {
     '--primary': theme?.primaryColor || '#4F46E5',
     '--primary-hover': theme?.primaryColorHover || '#4338ca',
@@ -216,6 +253,133 @@ function App({
   // Send Test fields
   const [testEmails, setTestEmails] = useState('');
   const [testAlert, setTestAlert] = useState('');
+
+  // External integration states
+  const [activeFileManager, setActiveFileManager] = useState<FileManagerProvider | null>(null);
+  const [fileManagerPath, setFileManagerPath] = useState<string>('/');
+  const [fileManagerItems, setFileManagerItems] = useState<any[]>([]);
+  const [fileManagerLoading, setFileManagerLoading] = useState<boolean>(false);
+  const [fileManagerError, setFileManagerError] = useState<string>('');
+  const [selectedCloudFile, setSelectedCloudFile] = useState<any | null>(null);
+
+  const [activeESPIntegration, setActiveESPIntegration] = useState<ESPIntegration | null>(null);
+  const [espLoading, setEspLoading] = useState<boolean>(false);
+  const [espSuccessMsg, setEspSuccessMsg] = useState<string>('');
+  const [espErrorMsg, setEspErrorMsg] = useState<string>('');
+  const [espPullTemplateId, setEspPullTemplateId] = useState<string>('');
+
+  const loadFileManagerItems = async (provider: FileManagerProvider, path: string) => {
+    setFileManagerLoading(true);
+    setFileManagerError('');
+    setSelectedCloudFile(null);
+    try {
+      if (provider.onBrowse) {
+        const response = await provider.onBrowse(path);
+        if (response && Array.isArray(response)) {
+          setFileManagerItems(response);
+        } else if (response && response.files && Array.isArray(response.files)) {
+          setFileManagerItems(response.files);
+        } else {
+          setFileManagerItems([]);
+        }
+      }
+    } catch (err: any) {
+      setFileManagerError(err.message || 'Error loading files');
+    } finally {
+      setFileManagerLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeFileManager) {
+      loadFileManagerItems(activeFileManager, fileManagerPath);
+    }
+  }, [activeFileManager, fileManagerPath]);
+
+  const handleImportCloudFile = (file: any) => {
+    if (!file) return;
+    if (file.content) {
+      try {
+        const parsed = JSON.parse(file.content);
+        if (Array.isArray(parsed)) {
+          updateNodesAndHistory(parsed);
+          setActiveFileManager(null);
+        } else {
+          setFileManagerError('Invalid template format in file');
+        }
+      } catch (e) {
+        setFileManagerError('Failed to parse file JSON');
+      }
+    } else if (file.name && file.name.endsWith('.json')) {
+      if (file.name === 'newsletter-2026.json') {
+        updateNodesAndHistory(INITIAL_TEMPLATE);
+        setActiveFileManager(null);
+      } else {
+        setFileManagerError('Selected file cannot be read directly.');
+      }
+    } else {
+      setFileManagerError('Please select a valid template file (.json).');
+    }
+  };
+
+  const handleCloudUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !activeFileManager || !activeFileManager.onUpload) return;
+    setFileManagerLoading(true);
+    setFileManagerError('');
+    try {
+      const resultUrl = await activeFileManager.onUpload(file, fileManagerPath);
+      alert(`File uploaded successfully: ${resultUrl}`);
+      loadFileManagerItems(activeFileManager, fileManagerPath);
+    } catch (err: any) {
+      setFileManagerError(err.message || 'Upload failed');
+    } finally {
+      setFileManagerLoading(false);
+    }
+  };
+
+  const handleESPPush = async () => {
+    if (!activeESPIntegration || !activeESPIntegration.onPush) return;
+    setEspLoading(true);
+    setEspSuccessMsg('');
+    setEspErrorMsg('');
+    try {
+      await activeESPIntegration.onPush(htmlCode, mjmlCode);
+      setEspSuccessMsg(`Template successfully pushed to ${activeESPIntegration.name}!`);
+    } catch (err: any) {
+      setEspErrorMsg(err.message || 'Failed to push template');
+    } finally {
+      setEspLoading(false);
+    }
+  };
+
+  const handleESPPull = async () => {
+    if (!activeESPIntegration || !activeESPIntegration.onPull || !espPullTemplateId.trim()) return;
+    setEspLoading(true);
+    setEspSuccessMsg('');
+    setEspErrorMsg('');
+    try {
+      const response = await activeESPIntegration.onPull(espPullTemplateId);
+      if (response && response.html) {
+        if (response.nodes) {
+          updateNodesAndHistory(response.nodes);
+        } else if (response.mjml) {
+          alert('Imported MJML template from ESP successfully.');
+        }
+        setEspSuccessMsg(`Template ${espPullTemplateId} successfully pulled and loaded!`);
+        setTimeout(() => {
+          setActiveESPIntegration(null);
+          setEspPullTemplateId('');
+        }, 1500);
+      } else {
+        setEspErrorMsg('Invalid template response');
+      }
+    } catch (err: any) {
+      setEspErrorMsg(err.message || 'Failed to pull template');
+    } finally {
+      setEspLoading(false);
+    }
+  };
 
   // Asynchronous Compiler Web Worker State
   const [mjmlCode, setMjmlCode] = useState(() => compileToMJML(getInitialNodes()));
@@ -336,6 +500,21 @@ function App({
         break;
       case 'social':
         defaultProps = { align: 'center', padding: '15px 20px' };
+        break;
+      case 'video':
+        defaultProps = { thumbnailUrl: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800&auto=format&fit=crop&q=60', videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', align: 'center', padding: '10px 20px' };
+        break;
+      case 'custom_html':
+        defaultProps = { htmlContent: '<div style="padding: 20px; text-align: center; border: 2px dashed #ccc; font-family: sans-serif; font-size: 13px; color: #666;">HTML Personalizado</div>' };
+        break;
+      case 'countdown':
+        defaultProps = { endTime: '2026-12-31', color: '#111827', align: 'center', padding: '15px 20px' };
+        break;
+      case 'accordion':
+        defaultProps = { title: 'Título del Acordeón', content: 'Detalles del acordeón...', padding: '10px 20px' };
+        break;
+      case 'carousel':
+        defaultProps = { images: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=60,https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800&auto=format&fit=crop&q=60', padding: '10px 20px' };
         break;
     }
 
@@ -678,6 +857,17 @@ function App({
         }}
         onExportClick={handleExportAction}
         onSendTestClick={() => setIsSendTestOpen(true)}
+        fileManagerProviders={fileManagerProviders}
+        espIntegrations={espIntegrations}
+        onFileManagerClick={(provider) => {
+          setFileManagerPath('/');
+          setActiveFileManager(provider);
+        }}
+        onESPClick={(integration) => {
+          setEspSuccessMsg('');
+          setEspErrorMsg('');
+          setActiveESPIntegration(integration);
+        }}
       />
 
       {/* Main Workspace layout */}
@@ -841,8 +1031,193 @@ function App({
           </div>
         </div>
       )}
+
+      {/* File Manager Modal */}
+      {activeFileManager && (
+        <div className="modal-overlay">
+          <div className="modal-content !w-[650px]">
+            <div className="modal-header">
+              <h2 className="flex items-center gap-2">
+                <Sparkles size={18} className="text-primary animate-pulse" />
+                <span>{activeFileManager.name}</span>
+              </h2>
+              <button onClick={() => setActiveFileManager(null)} className="modal-close-btn">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="flex items-center justify-between border-b border-border-color pb-2.5">
+                <span className="text-xs font-mono text-text-secondary">Path: {fileManagerPath}</span>
+                <div className="flex gap-2">
+                  {fileManagerPath !== '/' && (
+                    <button
+                      onClick={() => {
+                        const parts = fileManagerPath.split('/').filter(Boolean);
+                        parts.pop();
+                        setFileManagerPath('/' + parts.join('/'));
+                      }}
+                      className="border border-border-color p-1.5 px-3 rounded-md text-[11px] font-semibold cursor-pointer transition-all bg-bg-hover text-text-primary hover:bg-border-color/50"
+                    >
+                      Volver
+                    </button>
+                  )}
+                  <label className="border border-border-color p-1.5 px-3 rounded-md text-[11px] font-semibold cursor-pointer transition-all bg-primary hover:bg-primary-hover text-white flex items-center gap-1">
+                    <span>Subir archivo</span>
+                    <input type="file" className="hidden" onChange={handleCloudUpload} />
+                  </label>
+                </div>
+              </div>
+
+              {fileManagerError && (
+                <div className="p-2 px-3 bg-red-500/15 text-danger rounded-md text-xs">
+                  {fileManagerError}
+                </div>
+              )}
+
+              <div className="border border-border-color rounded-lg max-h-[300px] overflow-y-auto bg-bg-app">
+                {fileManagerLoading ? (
+                  <div className="flex items-center justify-center p-8 text-xs text-text-secondary gap-2">
+                    <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full" />
+                    Cargando archivos...
+                  </div>
+                ) : fileManagerItems.length === 0 ? (
+                  <div className="p-8 text-center text-xs text-text-muted">
+                    No se encontraron archivos en este directorio.
+                  </div>
+                ) : (
+                  <div className="divide-y divide-border-color">
+                    {fileManagerItems.map((item, index) => {
+                      const isDir = item.type === 'dir';
+                      const isSelected = selectedCloudFile?.id === item.id;
+                      return (
+                        <div
+                          key={item.id || index}
+                          onClick={() => {
+                            if (isDir) {
+                              setFileManagerPath(
+                                fileManagerPath === '/' ? `/${item.name}` : `${fileManagerPath}/${item.name}`
+                              );
+                            } else {
+                              setSelectedCloudFile(item);
+                            }
+                          }}
+                          className={`flex items-center justify-between p-2.5 px-4 cursor-pointer transition-all text-xs hover:bg-bg-hover ${
+                            isSelected ? 'bg-primary/10 border-l-2 border-primary font-semibold' : ''
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <span className="text-base">{isDir ? '📁' : '📄'}</span>
+                            <span className="text-text-primary">{item.name}</span>
+                          </div>
+                          <span className="text-[10px] text-text-muted capitalize">{item.type}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button
+                onClick={() => setActiveFileManager(null)}
+                className="border-none p-2 px-3.5 rounded-md text-xs font-semibold cursor-pointer transition-all bg-bg-hover text-text-primary border border-border-color hover:bg-border-color/50"
+              >
+                Cerrar
+              </button>
+              <button
+                onClick={() => handleImportCloudFile(selectedCloudFile)}
+                disabled={!selectedCloudFile}
+                className="border-none p-2 px-3.5 rounded-md text-xs font-semibold cursor-pointer transition-all bg-primary hover:bg-primary-hover text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cargar Plantilla
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ESP Sync Modal */}
+      {activeESPIntegration && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h2 className="flex items-center gap-2">
+                <Sparkles size={18} className="text-accent-color animate-pulse" />
+                <span>Sync con {activeESPIntegration.name}</span>
+              </h2>
+              <button onClick={() => setActiveESPIntegration(null)} className="modal-close-btn">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="modal-body">
+              <p className="text-xs text-text-secondary">
+                Sincroniza directamente tus plantillas de correo con {activeESPIntegration.name}.
+              </p>
+
+              {espSuccessMsg && (
+                <div className="p-2 px-3 bg-green-500/15 text-success rounded-md text-xs">
+                  {espSuccessMsg}
+                </div>
+              )}
+              {espErrorMsg && (
+                <div className="p-2 px-3 bg-red-500/15 text-danger rounded-md text-xs">
+                  {espErrorMsg}
+                </div>
+              )}
+
+              <div className="border border-border-color rounded-lg p-4 bg-bg-hover flex flex-col gap-2.5">
+                <h3 className="text-xs font-bold text-text-primary">Subir plantilla actual</h3>
+                <p className="text-[11px] text-text-muted">
+                  Sube el diseño HTML actual directamente a tu cuenta de {activeESPIntegration.name}.
+                </p>
+                <button
+                  onClick={handleESPPush}
+                  disabled={espLoading}
+                  className="border-none p-2 px-3.5 rounded-md text-xs font-semibold cursor-pointer transition-all bg-primary hover:bg-primary-hover text-white disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {espLoading && (
+                    <div className="animate-spin w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full" />
+                  )}
+                  <span>Exportar a {activeESPIntegration.name}</span>
+                </button>
+              </div>
+
+              <div className="border border-border-color rounded-lg p-4 bg-bg-hover flex flex-col gap-2.5">
+                <h3 className="text-xs font-bold text-text-primary">Importar plantilla</h3>
+                <p className="text-[11px] text-text-muted">
+                  Introduce el ID de una plantilla existente en {activeESPIntegration.name} para cargarla.
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="ID de plantilla (ej. tmp_1234)"
+                    value={espPullTemplateId}
+                    onChange={(e) => setEspPullTemplateId(e.target.value)}
+                    className="flex-1 bg-bg-panel border border-border-color text-text-primary p-2 px-3 rounded-md text-xs outline-none transition-all focus:border-primary"
+                  />
+                  <button
+                    onClick={handleESPPull}
+                    disabled={espLoading || !espPullTemplateId.trim()}
+                    className="border-none p-2 px-3.5 rounded-md text-xs font-semibold cursor-pointer transition-all bg-accent-color text-white hover:opacity-90 disabled:opacity-50"
+                  >
+                    <span>Importar</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button
+                onClick={() => setActiveESPIntegration(null)}
+                className="border-none p-2 px-3.5 rounded-md text-xs font-semibold cursor-pointer transition-all bg-bg-hover text-text-primary border border-border-color hover:bg-border-color/50"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
-}
+});
 
 export default App;

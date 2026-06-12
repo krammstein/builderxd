@@ -206,6 +206,50 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             {renderField(t('padding'), 'padding', 'text')}
           </>
         );
+      case 'video':
+        return (
+          <>
+            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">{t('componentVideo')}</h3>
+            {!isMobileTab && renderField('URL de Miniatura (Thumbnail)', 'thumbnailUrl', 'text')}
+            {!isMobileTab && renderField('URL de Vídeo (Video)', 'videoUrl', 'text')}
+            {renderField(t('align'), 'align', 'select', ['left', 'center', 'right'])}
+            {renderField(t('padding'), 'padding', 'text')}
+          </>
+        );
+      case 'custom_html':
+        return (
+          <>
+            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">{t('componentCustomHtml')}</h3>
+            {!isMobileTab && renderField('Código HTML', 'htmlContent', 'textarea')}
+          </>
+        );
+      case 'countdown':
+        return (
+          <>
+            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">{t('componentCountdown')}</h3>
+            {!isMobileTab && renderField('Fecha Límite (YYYY-MM-DD)', 'endTime', 'text')}
+            {renderField('Color del Texto', 'color', 'color')}
+            {renderField(t('align'), 'align', 'select', ['left', 'center', 'right'])}
+            {renderField(t('padding'), 'padding', 'text')}
+          </>
+        );
+      case 'accordion':
+        return (
+          <>
+            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">{t('componentAccordion')}</h3>
+            {!isMobileTab && renderField('Título del Acordeón', 'title', 'text')}
+            {!isMobileTab && renderField('Contenido Expandido', 'content', 'textarea')}
+            {renderField(t('padding'), 'padding', 'text')}
+          </>
+        );
+      case 'carousel':
+        return (
+          <>
+            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">{t('componentCarousel')}</h3>
+            {!isMobileTab && renderField('Imágenes (URLs separadas por coma)', 'images', 'textarea')}
+            {renderField(t('padding'), 'padding', 'text')}
+          </>
+        );
       default:
         return null;
     }

@@ -60,7 +60,12 @@ const translations: Record<Language, TranslationDict> = {
     componentSpacer: 'Espaciador',
     componentSocial: 'Redes Sociales',
     componentSection: 'Sección',
-    componentColumn: 'Columna'
+    componentColumn: 'Columna',
+    componentVideo: 'Elemento de Vídeo',
+    componentCustomHtml: 'HTML Personalizado',
+    componentCountdown: 'Contador Regresivo',
+    componentAccordion: 'Acordeón de Contenido',
+    componentCarousel: 'Carrusel de Imágenes'
   },
   en: {
     title: 'BuilderXD',
@@ -119,7 +124,12 @@ const translations: Record<Language, TranslationDict> = {
     componentSpacer: 'Spacer Block',
     componentSocial: 'Social Networks',
     componentSection: 'Section Container',
-    componentColumn: 'Column Layout'
+    componentColumn: 'Column Layout',
+    componentVideo: 'Video Element',
+    componentCustomHtml: 'Custom HTML',
+    componentCountdown: 'Countdown Timer',
+    componentAccordion: 'Accordion Menu',
+    componentCarousel: 'Image Carousel'
   }
 };
 

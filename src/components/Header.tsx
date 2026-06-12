@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
-import type { DeviceMode, Language } from '../types';
+import type { DeviceMode, Language, FileManagerProvider, ESPIntegration } from '../types';
 import {
   Monitor,
   Tablet,
@@ -14,7 +14,9 @@ import {
   Globe,
   Sun,
   Moon,
-  Sparkles
+  Sparkles,
+  Cloud,
+  Share2
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -27,6 +29,10 @@ interface HeaderProps {
   onImportClick: () => void;
   onExportClick: () => void;
   onSendTestClick: () => void;
+  fileManagerProviders?: FileManagerProvider[];
+  espIntegrations?: ESPIntegration[];
+  onFileManagerClick?: (provider: FileManagerProvider) => void;
+  onESPClick?: (integration: ESPIntegration) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -38,7 +44,11 @@ export const Header: React.FC<HeaderProps> = ({
   onRedo,
   onImportClick,
   onExportClick,
-  onSendTestClick
+  onSendTestClick,
+  fileManagerProviders = [],
+  espIntegrations = [],
+  onFileManagerClick,
+  onESPClick
 }) => {
   const { t, language, setLanguage } = useTranslation();
   const { theme, toggleTheme } = useTheme();
@@ -138,6 +148,28 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Operations */}
         <div className="flex gap-2">
+          {fileManagerProviders.map((provider) => (
+            <button
+              key={provider.id}
+              onClick={() => onFileManagerClick?.(provider)}
+              className="border-none p-2 px-3 rounded-md text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-all bg-bg-hover text-text-primary border border-border-color hover:bg-border-color/50"
+              title={`Browse ${provider.name}`}
+            >
+              <Cloud size={14} className="text-primary" />
+              <span>{provider.name}</span>
+            </button>
+          ))}
+          {espIntegrations.map((integration) => (
+            <button
+              key={integration.id}
+              onClick={() => onESPClick?.(integration)}
+              className="border-none p-2 px-3 rounded-md text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-all bg-bg-hover text-text-primary border border-border-color hover:bg-border-color/50"
+              title={`Push/Pull to ${integration.name}`}
+            >
+              <Share2 size={14} className="text-accent-color" />
+              <span>{integration.name}</span>
+            </button>
+          ))}
           <button
             onClick={onImportClick}
             className="border-none p-2 px-3.5 rounded-md text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-all bg-bg-hover text-text-primary border border-border-color hover:bg-border-color/50"

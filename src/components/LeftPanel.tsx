@@ -14,7 +14,12 @@ import {
   Trash2,
   ChevronUp,
   ChevronDown,
-  Layers
+  Layers,
+  Video,
+  Code,
+  Clock,
+  Menu,
+  Images
 } from 'lucide-react';
 
 interface LeftPanelProps {
@@ -47,7 +52,12 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
     { type: 'button' as BlockType, label: t('componentButton'), desc: 'Botón con enlace personalizable', icon: <Square size={18} /> },
     { type: 'divider' as BlockType, label: t('componentDivider'), desc: 'Línea separadora de contenido', icon: <Minus size={18} /> },
     { type: 'spacer' as BlockType, label: t('componentSpacer'), desc: 'Espacio vertical de relleno', icon: <MoveVertical size={18} /> },
-    { type: 'social' as BlockType, label: t('componentSocial'), desc: 'Enlaces a redes sociales', icon: <Share2 size={18} /> }
+    { type: 'social' as BlockType, label: t('componentSocial'), desc: 'Enlaces a redes sociales', icon: <Share2 size={18} /> },
+    { type: 'video' as BlockType, label: t('componentVideo'), desc: 'Enlace de vídeo con miniatura', icon: <Video size={18} /> },
+    { type: 'custom_html' as BlockType, label: t('componentCustomHtml'), desc: 'Código HTML incrustado', icon: <Code size={18} /> },
+    { type: 'countdown' as BlockType, label: t('componentCountdown'), desc: 'Contador de tiempo regresivo', icon: <Clock size={18} /> },
+    { type: 'accordion' as BlockType, label: t('componentAccordion'), desc: 'Acordeón de contenido plegable', icon: <Menu size={18} /> },
+    { type: 'carousel' as BlockType, label: t('componentCarousel'), desc: 'Carrusel de imágenes deslizables', icon: <Images size={18} /> }
   ];
 
   const filteredComponents = availableComponents.filter((comp) =>

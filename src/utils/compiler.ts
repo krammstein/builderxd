@@ -79,6 +79,44 @@ ${indent}  <mj-social-element name="twitter" href="#" />
 ${indent}  <mj-social-element name="instagram" href="#" />
 ${indent}</mj-social>\n`;
       }
+      case 'video': {
+        const src = props.thumbnailUrl ? ` src="${props.thumbnailUrl}"` : ' src="https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800&auto=format&fit=crop&q=60"';
+        const href = props.videoUrl ? ` href="${props.videoUrl}"` : ' href="#"';
+        const align = styleAttr('align', 'align');
+        const pad = styleAttr('padding', 'padding');
+        return `${indent}<mj-image${src}${href}${align}${pad} />\n`;
+      }
+      case 'custom_html': {
+        return `${indent}<mj-raw>${props.htmlContent || '<div style="padding: 20px; text-align: center;">HTML Personalizado</div>'}</mj-raw>\n`;
+      }
+      case 'countdown': {
+        const align = styleAttr('align', 'align');
+        const pad = styleAttr('padding', 'padding');
+        const color = styleAttr('color', 'color');
+        return `${indent}<mj-text${align}${pad}${color} font-size="20px">Contador: ${props.endTime || '2026-12-31'}</mj-text>\n`;
+      }
+      case 'accordion': {
+        const title = props.title || 'Título del Acordeón';
+        const content = props.content || 'Detalles del acordeón...';
+        return `${indent}<mj-accordion>
+${indent}  <mj-accordion-element>
+${indent}    <mj-accordion-title>${title}</mj-accordion-title>
+${indent}    <mj-accordion-text>${content}</mj-accordion-text>
+${indent}  </mj-accordion-element>
+${indent}</mj-accordion>\n`;
+      }
+      case 'carousel': {
+        const imagesList = props.images ? props.images.split(',') : [
+          'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800&auto=format&fit=crop&q=60'
+        ];
+        let carouselStr = `${indent}<mj-carousel>\n`;
+        imagesList.forEach((img: string) => {
+          carouselStr += `${indent}  <mj-carousel-image src="${img.trim()}" />\n`;
+        });
+        carouselStr += `${indent}</mj-carousel>\n`;
+        return carouselStr;
+      }
       default:
         return '';
     }
@@ -223,6 +261,93 @@ export const compileToHTML = (
                 </td>
               </tr>
             </table>
+          </div>
+        `;
+      }
+      case 'video': {
+        const url = getResponsiveStyle(node, 'thumbnailUrl', 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800&auto=format&fit=crop&q=60');
+        const align = getResponsiveStyle(node, 'align', 'center');
+        const padding = getResponsiveStyle(node, 'padding', '10px 20px');
+        return `
+          <div data-id="${node.id}" class="builder-element${isSelectedClass}" style="text-align: ${align}; padding: ${padding}; box-sizing: border-box;">
+            <div style="position: relative; display: inline-block; cursor: pointer; max-width: 100%;">
+              <img src="${url}" style="max-width: 100%; height: auto; border-radius: 8px; display: block;" />
+              <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 64px; height: 64px; background: rgba(0,0,0,0.7); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white;">
+                <div style="width: 0; height: 0; border-top: 10px solid transparent; border-bottom: 10px solid transparent; border-left: 16px solid white; margin-left: 6px;"></div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+      case 'custom_html': {
+        const content = node.properties.htmlContent || '<div style="padding: 20px; text-align: center; border: 2px dashed #ccc; font-family: sans-serif; font-size: 13px; color: #666;">HTML Personalizado</div>';
+        return `
+          <div data-id="${node.id}" class="builder-element${isSelectedClass}" style="box-sizing: border-box;">
+            ${content}
+          </div>
+        `;
+      }
+      case 'countdown': {
+        const align = getResponsiveStyle(node, 'align', 'center');
+        const padding = getResponsiveStyle(node, 'padding', '15px 20px');
+        const endTime = node.properties.endTime || '2026-12-31';
+        return `
+          <div data-id="${node.id}" class="builder-element${isSelectedClass}" style="text-align: ${align}; padding: ${padding}; box-sizing: border-box; font-family: sans-serif;">
+            <div style="display: inline-flex; gap: 8px; justify-content: ${align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start'};">
+              <div style="background: #111827; color: white; padding: 8px 12px; border-radius: 4px; text-align: center; min-width: 50px;">
+                <span style="font-size: 18px; font-weight: bold; display: block;">02</span>
+                <span style="font-size: 9px; opacity: 0.7; text-transform: uppercase;">días</span>
+              </div>
+              <div style="background: #111827; color: white; padding: 8px 12px; border-radius: 4px; text-align: center; min-width: 50px;">
+                <span style="font-size: 18px; font-weight: bold; display: block;">05</span>
+                <span style="font-size: 9px; opacity: 0.7; text-transform: uppercase;">horas</span>
+              </div>
+              <div style="background: #111827; color: white; padding: 8px 12px; border-radius: 4px; text-align: center; min-width: 50px;">
+                <span style="font-size: 18px; font-weight: bold; display: block;">34</span>
+                <span style="font-size: 9px; opacity: 0.7; text-transform: uppercase;">mins</span>
+              </div>
+              <div style="background: #111827; color: white; padding: 8px 12px; border-radius: 4px; text-align: center; min-width: 50px;">
+                <span style="font-size: 18px; font-weight: bold; display: block;">12</span>
+                <span style="font-size: 9px; opacity: 0.7; text-transform: uppercase;">segs</span>
+              </div>
+            </div>
+            <div style="font-size: 10px; color: #6b7280; margin-top: 6px;">Termina el: ${endTime}</div>
+          </div>
+        `;
+      }
+      case 'accordion': {
+        const title = node.properties.title || 'Título del Acordeón';
+        const content = node.properties.content || 'Detalles del acordeón...';
+        const padding = getResponsiveStyle(node, 'padding', '10px 20px');
+        return `
+          <div data-id="${node.id}" class="builder-element${isSelectedClass}" style="padding: ${padding}; box-sizing: border-box; font-family: sans-serif;">
+            <details style="border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px; background: white;" open>
+              <summary style="font-weight: 600; cursor: pointer; outline: none; list-style: none; display: flex; justify-content: space-between; align-items: center;">
+                <span>${title}</span>
+                <span style="font-size: 12px; opacity: 0.5;">▼</span>
+              </summary>
+              <div style="margin-top: 8px; color: #4b5563; font-size: 14px; line-height: 1.5;">
+                ${content}
+              </div>
+            </details>
+          </div>
+        `;
+      }
+      case 'carousel': {
+        const imagesVal = node.properties.images || '';
+        const imagesList = imagesVal ? imagesVal.split(',') : [
+          'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800&auto=format&fit=crop&q=60'
+        ];
+        const padding = getResponsiveStyle(node, 'padding', '10px 20px');
+        return `
+          <div data-id="${node.id}" class="builder-element${isSelectedClass}" style="padding: ${padding}; box-sizing: border-box; text-align: center;">
+            <div style="display: flex; gap: 8px; justify-content: center; overflow: hidden; max-width: 100%;">
+              ${imagesList.map((img: string) => `
+                <img src="${img.trim()}" style="width: 80px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e7eb;" />
+              `).join('')}
+            </div>
+            <div style="font-size: 9px; color: #9ca3af; margin-top: 4px;">Carrusel de ${imagesList.length} imágenes (Vista Compacta)</div>
           </div>
         `;
       }

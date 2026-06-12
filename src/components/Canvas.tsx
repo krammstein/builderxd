@@ -15,11 +15,11 @@ export const Canvas: React.FC<CanvasProps> = ({
   onDropElement
 }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const lastHtmlRef = useRef<string>('');
 
-  // Listen to postMessages from sandboxed iframe
+  // Handle postMessage events from inside the iframe
   useEffect(() => {
     const handleIframeMessage = (event: MessageEvent) => {
-      // Validate event type
       if (event.data) {
         if (event.data.type === 'SELECT_ELEMENT') {
           onSelectNode(event.data.id);
@@ -34,6 +34,73 @@ export const Canvas: React.FC<CanvasProps> = ({
       window.removeEventListener('message', handleIframeMessage);
     };
   }, [onSelectNode, onDropElement]);
+
+  // Apply DOM patching or reload srcdoc programmatically
+  useEffect(() => {
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+
+    // If iframe hasn't loaded or it's the first time
+    if (!lastHtmlRef.current || !doc || !doc.body || doc.body.innerHTML.trim() === '') {
+      iframe.srcdoc = htmlContent;
+      lastHtmlRef.current = htmlContent;
+      return;
+    }
+
+    try {
+      const parser = new DOMParser();
+      const newDoc = parser.parseFromString(htmlContent, 'text/html');
+
+      const currentElements = Array.from(doc.querySelectorAll('[data-id]'));
+      const newElements = Array.from(newDoc.querySelectorAll('[data-id]'));
+
+      const currentIds = currentElements.map((el) => el.getAttribute('data-id'));
+      const newIds = newElements.map((el) => el.getAttribute('data-id'));
+
+      // Compare structure: length and order of IDs
+      const structureMatches =
+        currentIds.length === newIds.length &&
+        currentIds.every((id, idx) => id === newIds[idx]);
+
+      if (structureMatches && currentElements.length > 0) {
+        // Patch each element if its outerHTML has changed
+        newElements.forEach((newEl, idx) => {
+          const currentEl = currentElements[idx];
+          if (currentEl.outerHTML !== newEl.outerHTML) {
+            currentEl.outerHTML = newEl.outerHTML;
+          }
+        });
+
+        // Sync <style> tag inside the <head>
+        const currentStyle = doc.querySelector('head style');
+        const newStyle = newDoc.querySelector('head style');
+        if (currentStyle && newStyle && currentStyle.innerHTML !== newStyle.innerHTML) {
+          currentStyle.innerHTML = newStyle.innerHTML;
+        }
+
+        // Sync body attributes
+        const newBodyStyle = newDoc.body.getAttribute('style');
+        if (doc.body.getAttribute('style') !== newBodyStyle) {
+          doc.body.setAttribute('style', newBodyStyle || '');
+        }
+
+        const newBodyClass = newDoc.body.getAttribute('class');
+        if (doc.body.getAttribute('class') !== newBodyClass) {
+          doc.body.setAttribute('class', newBodyClass || '');
+        }
+      } else {
+        // Fallback to full reload when structure differs
+        iframe.srcdoc = htmlContent;
+      }
+    } catch (e) {
+      console.warn('DOM patching failed, reloading iframe', e);
+      iframe.srcdoc = htmlContent;
+    }
+
+    lastHtmlRef.current = htmlContent;
+  }, [htmlContent]);
 
   // Determine width based on responsive setting
   const getCanvasWidth = () => {
@@ -84,11 +151,14 @@ export const Canvas: React.FC<CanvasProps> = ({
       const target = (e.target as HTMLElement).closest('[data-id]') as HTMLElement;
       const targetId = target ? target.getAttribute('data-id') : null;
 
-      window.parent.postMessage({
-        type: 'DROP_ELEMENT',
-        blockType,
-        targetId
-      }, '*');
+      window.parent.postMessage(
+        {
+          type: 'DROP_ELEMENT',
+          blockType,
+          targetId
+        },
+        '*'
+      );
     });
   };
 
@@ -112,7 +182,6 @@ export const Canvas: React.FC<CanvasProps> = ({
 
         <iframe
           ref={iframeRef}
-          srcDoc={htmlContent}
           title="Email Builder Canvas"
           sandbox="allow-same-origin allow-scripts"
           className="flex-1 border-none w-full h-full bg-[#f8fafc]"
@@ -122,3 +191,4 @@ export const Canvas: React.FC<CanvasProps> = ({
     </main>
   );
 };
+
