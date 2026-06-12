@@ -111,3 +111,17 @@ export interface ESPIntegration {
   onPush?: (html: string, mjml: string) => Promise<any>;
   onPull?: (templateId: string) => Promise<any>;
 }
+
+export type TemplateMode = 'html' | 'mjml';
+
+export interface UIConfig {
+  showImport?: boolean;
+  showExport?: boolean;
+  showSendTest?: boolean;
+  showThemeToggle?: boolean;
+  showLanguageToggle?: boolean;
+  showDeviceToggle?: boolean;
+  showHistoryToggle?: boolean;
+  showClearCanvas?: boolean;
+  showTemplateModeToggle?: boolean;
+}

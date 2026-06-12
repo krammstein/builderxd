@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { Header } from './components/Header';
 import { LeftPanel } from './components/LeftPanel';
 import { InspectorPanel } from './components/InspectorPanel';
 import { Canvas } from './components/Canvas';
 import { CodeDrawer } from './components/CodeDrawer';
-import type { BlockNode, BlockType, DeviceMode, FileManagerProvider, ESPIntegration } from './types';
+import type { BlockNode, BlockType, DeviceMode, FileManagerProvider, ESPIntegration, UIConfig, TemplateMode } from './types';
 
 import { compileToMJML, compileToHTML } from './utils/compiler';
 import { useTranslation } from './context/LanguageContext';
@@ -27,6 +27,9 @@ export interface AppProps {
   };
   fileManagerProviders?: FileManagerProvider[];
   espIntegrations?: ESPIntegration[];
+  uiConfig?: UIConfig;
+  assetManagerComponent?: React.ReactNode;
+  confirmClearPrompt?: string;
 }
 
 
@@ -165,7 +168,10 @@ const App = forwardRef<any, AppProps>(({
   readOnly = false,
   theme,
   fileManagerProviders = [],
-  espIntegrations = []
+  espIntegrations = [],
+  uiConfig,
+  assetManagerComponent,
+  confirmClearPrompt
 }, ref) => {
   const { t } = useTranslation();
   const { setTheme } = useTheme();
@@ -188,6 +194,9 @@ const App = forwardRef<any, AppProps>(({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [deviceMode, setDeviceMode] = useState<DeviceMode>(responsive || 'desktop');
   const [isCodeDrawerOpen, setIsCodeDrawerOpen] = useState(true);
+  const [templateMode, setTemplateMode] = useState<TemplateMode>('mjml');
+  const [isAssetManagerOpen, setIsAssetManagerOpen] = useState(false);
+  const [currentAssetCallback, setCurrentAssetCallback] = useState<((url: string) => void) | null>(null);
 
   // Sync dark mode from SDK prop if provided
   useEffect(() => {
@@ -691,6 +700,52 @@ const App = forwardRef<any, AppProps>(({
     if (selectedId === id) setSelectedId(null);
   };
 
+  const handleClearCanvas = () => {
+    if (readOnly) return;
+    const confirmMsg = confirmClearPrompt || '¿Está seguro de que desea limpiar todo el contenido del lienzo? Esta acción no se puede deshacer.';
+    if (window.confirm(confirmMsg)) {
+      updateNodesAndHistory([]);
+      setSelectedId(null);
+    }
+  };
+
+  const cloneRecursively = (list: BlockNode[], targetId: string): BlockNode[] => {
+    const result: BlockNode[] = [];
+    for (const node of list) {
+      if (node.id === targetId) {
+        const duplicateNode = (n: BlockNode): BlockNode => {
+          const newId = `${n.type}-${Math.random().toString(36).substr(2, 9)}`;
+          return {
+            ...n,
+            id: newId,
+            children: n.children ? n.children.map(duplicateNode) : undefined
+          };
+        };
+        result.push(node);
+        result.push(duplicateNode(node));
+      } else {
+        const updatedNode = { ...node };
+        if (node.children) {
+          updatedNode.children = cloneRecursively(node.children, targetId);
+        }
+        result.push(updatedNode);
+      }
+    }
+    return result;
+  };
+
+  const handleCloneNode = (id: string) => {
+    if (readOnly) return;
+    const next = cloneRecursively(nodes, id);
+    updateNodesAndHistory(next);
+  };
+
+  const handleUpdateNodeContent = (id: string, content: string) => {
+    if (readOnly) return;
+    const clean = content.replace(/<\/?[^>]+(>|$)/g, "");
+    handleUpdateProperties(id, { content: clean }, false);
+  };
+
   // Move node handler (Up / Down)
   const handleMoveNode = (id: string, direction: 'up' | 'down') => {
     if (readOnly) return;
@@ -867,6 +922,7 @@ const App = forwardRef<any, AppProps>(({
           setEspErrorMsg('');
           setActiveESPIntegration(integration);
         }}
+        uiConfig={uiConfig}
       />
 
       {/* Main Workspace layout */}
@@ -880,6 +936,10 @@ const App = forwardRef<any, AppProps>(({
           onDeleteNode={handleDeleteNode}
           onMoveNode={handleMoveNode}
           readOnly={readOnly}
+          templateMode={templateMode}
+          setTemplateMode={setTemplateMode}
+          onClearCanvas={handleClearCanvas}
+          uiConfig={uiConfig}
         />
 
         {/* Center Canvas */}
@@ -889,6 +949,9 @@ const App = forwardRef<any, AppProps>(({
             deviceMode={deviceMode}
             onSelectNode={setSelectedId}
             onDropElement={handleDropElement}
+            onDeleteNode={handleDeleteNode}
+            onCloneNode={handleCloneNode}
+            onUpdateNodeContent={handleUpdateNodeContent}
           />
         </div>
 
@@ -898,6 +961,17 @@ const App = forwardRef<any, AppProps>(({
           onUpdateProperties={handleUpdateProperties}
           onDeleteNode={handleDeleteNode}
           readOnly={readOnly}
+          onOpenAssetManager={(_currentUrl, onSelect) => {
+            if (assetManagerComponent) {
+              setCurrentAssetCallback(() => onSelect);
+              setIsAssetManagerOpen(true);
+            } else if (fileManagerProviders.length > 0) {
+              setFileManagerPath('/');
+              setActiveFileManager(fileManagerProviders[0]);
+            } else {
+              alert('No hay un gestor de archivos configurado.');
+            }
+          }}
         />
 
         {/* Collapsible bottom drawer for code preview */}
@@ -908,6 +982,38 @@ const App = forwardRef<any, AppProps>(({
           onToggle={() => setIsCodeDrawerOpen(!isCodeDrawerOpen)}
         />
       </div>
+
+      {/* Custom Asset Manager Modal */}
+      {isAssetManagerOpen && assetManagerComponent && (
+        <div className="modal-overlay z-50">
+          <div className="modal-content max-w-lg w-full bg-bg-panel border border-border-color rounded-lg p-5">
+            <div className="flex justify-between items-center border-b border-border-color pb-3 mb-4">
+              <h3 className="text-sm font-bold text-text-primary">Gestor de Archivos</h3>
+              <button 
+                onClick={() => setIsAssetManagerOpen(false)} 
+                className="bg-transparent border-none text-text-muted hover:text-text-primary cursor-pointer text-lg font-bold"
+              >
+                &times;
+              </button>
+            </div>
+            <div className="modal-body">
+              {React.isValidElement(assetManagerComponent) ? (
+                React.cloneElement(assetManagerComponent as React.ReactElement<any>, {
+                  onSelect: (url: string) => {
+                    if (currentAssetCallback) {
+                      currentAssetCallback(url);
+                    }
+                    setIsAssetManagerOpen(false);
+                  },
+                  onClose: () => setIsAssetManagerOpen(false)
+                })
+              ) : (
+                assetManagerComponent
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* --- MODALS --- */}
 

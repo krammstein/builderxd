@@ -9,6 +9,8 @@ import { AlignButtonGroup } from './inspector/AlignButtonGroup';
 import { NumberStepper } from './inspector/NumberStepper';
 import { SliderWithInput } from './inspector/SliderWithInput';
 import { PaddingEditor } from './inspector/PaddingEditor';
+import { MarginEditor } from './inspector/MarginEditor';
+import { BorderRadiusEditor } from './inspector/BorderRadiusEditor';
 import { CustomSelect } from './inspector/CustomSelect';
 import { FontFamilyPicker } from './inspector/FontFamilyPicker';
 import { DateTimePicker } from './inspector/DateTimePicker';
@@ -20,13 +22,15 @@ interface InspectorPanelProps {
   onUpdateProperties: (id: string, properties: Record<string, any>, isMobile: boolean) => void;
   onDeleteNode: (id: string) => void;
   readOnly?: boolean;
+  onOpenAssetManager?: (currentUrl: string, onSelect: (url: string) => void) => void;
 }
 
 export const InspectorPanel: React.FC<InspectorPanelProps> = ({
   selectedNode,
   onUpdateProperties,
   onDeleteNode,
-  readOnly = false
+  readOnly = false,
+  onOpenAssetManager
 }) => {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'general' | 'mobile'>('general');
@@ -55,9 +59,8 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
     onUpdateProperties(selectedNode.id, { desktop: desktopVal, mobile: mobileVal }, false);
   };
 
-  // Helper to render label header with Mobile Override Indicator
   const renderLabel = (label: string, key: string) => (
-    <div className="flex items-center justify-between">
+    <div className="flex items-center justify-between select-none">
       <label className="text-[11.5px] font-medium text-text-secondary">{label}</label>
       {isMobileTab && selectedNode.mobileProperties?.[key] !== undefined && (
         <span className="bg-primary text-white text-[9px] font-bold px-1 py-0.5 rounded-xs uppercase" title="Sobrescrito en móvil">
@@ -66,6 +69,30 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
       )}
     </div>
   );
+
+  const renderAssetField = (label: string, key: string) => {
+    const val = currentProperties[key] || '';
+    return (
+      <div className="flex flex-col gap-1.5">
+        {renderLabel(label, key)}
+        <div className="flex gap-1.5 w-full items-center">
+          <div className="flex-1">
+            <LinkInput value={val} onChange={(newVal) => handleChange(key, newVal)} disabled={readOnly} />
+          </div>
+          {onOpenAssetManager && (
+            <button
+              type="button"
+              onClick={() => onOpenAssetManager(val, (url) => handleChange(key, url))}
+              className="p-2 border border-border-color bg-bg-hover text-text-secondary hover:text-text-primary rounded-md flex items-center justify-center cursor-pointer shrink-0 transition-all hover:bg-bg-panel"
+              title="Abrir gestor de archivos"
+            >
+              📁
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   const renderContentProperties = () => {
     const p = currentProperties;
@@ -79,10 +106,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
               {renderLabel('Color de Fondo', 'backgroundColor')}
               <ColorPicker value={p.backgroundColor || '#ffffff'} onChange={(val) => handleChange('backgroundColor', val)} disabled={readOnly} />
             </div>
-            <div className="flex flex-col gap-1.5">
-              {renderLabel('Fondo de Imagen (URL)', 'backgroundImage')}
-              <LinkInput value={p.backgroundImage || ''} onChange={(val) => handleChange('backgroundImage', val)} disabled={readOnly} />
-            </div>
+            {renderAssetField('Fondo de Imagen (URL)', 'backgroundImage')}
             <div className="flex flex-col gap-1.5">
               {renderLabel('Posición del Fondo', 'backgroundPosition')}
               <CustomSelect
@@ -103,6 +127,12 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             </div>
             <div className="flex flex-col gap-1.5">
               <PaddingEditor value={p.padding || '20px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <MarginEditor value={p.margin || '0px'} onChange={(val) => handleChange('margin', val)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <BorderRadiusEditor value={p.borderRadius || '0px'} onChange={(val) => handleChange('borderRadius', val)} disabled={readOnly} />
             </div>
             {!isMobileTab && (
               <VisibilityToggle
@@ -143,6 +173,12 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             <div className="flex flex-col gap-1.5">
               <PaddingEditor value={p.padding || '0px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
             </div>
+            <div className="flex flex-col gap-1.5">
+              <MarginEditor value={p.margin || '0px'} onChange={(val) => handleChange('margin', val)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <BorderRadiusEditor value={p.borderRadius || '0px'} onChange={(val) => handleChange('borderRadius', val)} disabled={readOnly} />
+            </div>
           </div>
         );
 
@@ -155,7 +191,11 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                 {renderLabel('Contenido', 'content')}
                 <textarea
                   value={p.content || ''}
-                  onChange={(e) => handleChange('content', e.target.value)}
+                  onChange={(e) => {
+                    // Strip HTML tags to ensure plain text only
+                    const cleaned = e.target.value.replace(/<\/?[^>]+(>|$)/g, "");
+                    handleChange('content', cleaned);
+                  }}
                   disabled={readOnly}
                   className="bg-bg-hover border border-border-color text-text-primary p-2 px-3 rounded-md text-xs outline-none transition-all focus:border-primary w-full disabled:opacity-55"
                   rows={4}
@@ -194,7 +234,13 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
               <AlignButtonGroup value={p.align || 'left'} onChange={(val) => handleChange('align', val)} disabled={readOnly} />
             </div>
             <div className="flex flex-col gap-1.5">
-              <PaddingEditor value={p.padding || '10px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
+              <PaddingEditor value={p.padding || '10px 20px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <MarginEditor value={p.margin || '0px'} onChange={(val) => handleChange('margin', val)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <BorderRadiusEditor value={p.borderRadius || '0px'} onChange={(val) => handleChange('borderRadius', val)} disabled={readOnly} />
             </div>
           </div>
         );
@@ -203,12 +249,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
         return (
           <div className="flex flex-col gap-4">
             <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">Propiedades de Imagen</h3>
-            {!isMobileTab && (
-              <div className="flex flex-col gap-1.5">
-                {renderLabel('URL de Imagen', 'url')}
-                <LinkInput value={p.url || ''} onChange={(val) => handleChange('url', val)} disabled={readOnly} />
-              </div>
-            )}
+            {!isMobileTab && renderAssetField('URL de Imagen', 'url')}
             {!isMobileTab && (
               <div className="flex flex-col gap-1.5">
                 {renderLabel('Texto Alternativo', 'altText')}
@@ -226,11 +267,13 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
               <AlignButtonGroup value={p.align || 'center'} options={['left', 'center', 'right']} onChange={(val) => handleChange('align', val as any)} disabled={readOnly} />
             </div>
             <div className="flex flex-col gap-1.5">
-              {renderLabel('Borde Redondeado', 'borderRadius')}
-              <SliderWithInput value={p.borderRadius || 0} onChange={(val) => handleChange('borderRadius', val)} min={0} max={100} unit="px" disabled={readOnly} />
+              <BorderRadiusEditor value={p.borderRadius || '8px'} onChange={(val) => handleChange('borderRadius', val)} disabled={readOnly} />
             </div>
             <div className="flex flex-col gap-1.5">
               <PaddingEditor value={p.padding || '0px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <MarginEditor value={p.margin || '0px'} onChange={(val) => handleChange('margin', val)} disabled={readOnly} />
             </div>
           </div>
         );
@@ -245,7 +288,10 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                 <input
                   type="text"
                   value={p.content || ''}
-                  onChange={(e) => handleChange('content', e.target.value)}
+                  onChange={(e) => {
+                    const cleaned = e.target.value.replace(/<\/?[^>]+(>|$)/g, "");
+                    handleChange('content', cleaned);
+                  }}
                   disabled={readOnly}
                   className="bg-bg-hover border border-border-color text-text-primary p-2 px-3 rounded-md text-xs outline-none transition-all focus:border-primary w-full disabled:opacity-55"
                 />
@@ -266,15 +312,17 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
               <ColorPicker value={p.color || '#ffffff'} onChange={(val) => handleChange('color', val)} disabled={readOnly} />
             </div>
             <div className="flex flex-col gap-1.5">
-              {renderLabel('Borde Redondeado', 'borderRadius')}
-              <SliderWithInput value={p.borderRadius || 4} onChange={(val) => handleChange('borderRadius', val)} min={0} max={50} unit="px" disabled={readOnly} />
+              <BorderRadiusEditor value={p.borderRadius || '6px'} onChange={(val) => handleChange('borderRadius', val)} disabled={readOnly} />
             </div>
             <div className="flex flex-col gap-1.5">
               {renderLabel('Alineación', 'align')}
               <AlignButtonGroup value={p.align || 'center'} options={['left', 'center', 'right']} onChange={(val) => handleChange('align', val as any)} disabled={readOnly} />
             </div>
             <div className="flex flex-col gap-1.5">
-              <PaddingEditor value={p.padding || '10px 20px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
+              <PaddingEditor value={p.padding || '12px 24px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <MarginEditor value={p.margin || '0px'} onChange={(val) => handleChange('margin', val)} disabled={readOnly} />
             </div>
           </div>
         );
@@ -307,6 +355,9 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             <div className="flex flex-col gap-1.5">
               <PaddingEditor value={p.padding || '10px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
             </div>
+            <div className="flex flex-col gap-1.5">
+              <MarginEditor value={p.margin || '0px'} onChange={(val) => handleChange('margin', val)} disabled={readOnly} />
+            </div>
           </div>
         );
 
@@ -332,6 +383,9 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             <div className="flex flex-col gap-1.5">
               <PaddingEditor value={p.padding || '10px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
             </div>
+            <div className="flex flex-col gap-1.5">
+              <MarginEditor value={p.margin || '0px'} onChange={(val) => handleChange('margin', val)} disabled={readOnly} />
+            </div>
           </div>
         );
 
@@ -339,12 +393,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
         return (
           <div className="flex flex-col gap-4">
             <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">Elemento de Vídeo</h3>
-            {!isMobileTab && (
-              <div className="flex flex-col gap-1.5">
-                {renderLabel('Miniatura (Thumbnail)', 'thumbnailUrl')}
-                <LinkInput value={p.thumbnailUrl || ''} onChange={(val) => handleChange('thumbnailUrl', val)} disabled={readOnly} />
-              </div>
-            )}
+            {!isMobileTab && renderAssetField('Miniatura (Thumbnail)', 'thumbnailUrl')}
             {!isMobileTab && (
               <div className="flex flex-col gap-1.5">
                 {renderLabel('Enlace de Vídeo', 'videoUrl')}
@@ -357,6 +406,9 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             </div>
             <div className="flex flex-col gap-1.5">
               <PaddingEditor value={p.padding || '10px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <MarginEditor value={p.margin || '0px'} onChange={(val) => handleChange('margin', val)} disabled={readOnly} />
             </div>
           </div>
         );
@@ -405,6 +457,9 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             <div className="flex flex-col gap-1.5">
               <PaddingEditor value={p.padding || '10px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
             </div>
+            <div className="flex flex-col gap-1.5">
+              <MarginEditor value={p.margin || '0px'} onChange={(val) => handleChange('margin', val)} disabled={readOnly} />
+            </div>
           </div>
         );
 
@@ -419,7 +474,10 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                   <input
                     type="text"
                     value={p.title || ''}
-                    onChange={(e) => handleChange('title', e.target.value)}
+                    onChange={(e) => {
+                      const cleaned = e.target.value.replace(/<\/?[^>]+(>|$)/g, "");
+                      handleChange('title', cleaned);
+                    }}
                     disabled={readOnly}
                     className="bg-bg-hover border border-border-color text-text-primary p-2 px-3 rounded-md text-xs outline-none transition-all focus:border-primary w-full disabled:opacity-55"
                   />
@@ -428,7 +486,10 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                   {renderLabel('Contenido', 'content')}
                   <textarea
                     value={p.content || ''}
-                    onChange={(e) => handleChange('content', e.target.value)}
+                    onChange={(e) => {
+                      const cleaned = e.target.value.replace(/<\/?[^>]+(>|$)/g, "");
+                      handleChange('content', cleaned);
+                    }}
                     disabled={readOnly}
                     className="bg-bg-hover border border-border-color text-text-primary p-2 px-3 rounded-md text-xs outline-none transition-all focus:border-primary w-full disabled:opacity-55"
                     rows={4}
@@ -438,6 +499,9 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             )}
             <div className="flex flex-col gap-1.5">
               <PaddingEditor value={p.padding || '10px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <MarginEditor value={p.margin || '0px'} onChange={(val) => handleChange('margin', val)} disabled={readOnly} />
             </div>
           </div>
         );
@@ -462,10 +526,12 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             <div className="flex flex-col gap-1.5">
               <PaddingEditor value={p.padding || '10px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
             </div>
+            <div className="flex flex-col gap-1.5">
+              <MarginEditor value={p.margin || '0px'} onChange={(val) => handleChange('margin', val)} disabled={readOnly} />
+            </div>
           </div>
         );
 
-      // New blocks settings
       case 'icon':
         return (
           <div className="flex flex-col gap-4">
@@ -527,7 +593,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                       const parsed = JSON.parse(e.target.value);
                       handleChange('items', parsed);
                     } catch (err) {
-                      handleChange('items', e.target.value); // keep raw string if invalid JSON during typing
+                      handleChange('items', e.target.value);
                     }
                   }}
                   disabled={readOnly}
@@ -571,6 +637,9 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             <div className="flex flex-col gap-1.5">
               <PaddingEditor value={p.padding || '10px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
             </div>
+            <div className="flex flex-col gap-1.5">
+              <MarginEditor value={p.margin || '0px'} onChange={(val) => handleChange('margin', val)} disabled={readOnly} />
+            </div>
           </div>
         );
 
@@ -578,23 +647,21 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
         return (
           <div className="flex flex-col gap-4">
             <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">Imagen + Texto</h3>
+            {!isMobileTab && renderAssetField('URL de Imagen', 'imageUrl')}
             {!isMobileTab && (
-              <>
-                <div className="flex flex-col gap-1.5">
-                  {renderLabel('URL de Imagen', 'imageUrl')}
-                  <LinkInput value={p.imageUrl || ''} onChange={(val) => handleChange('imageUrl', val)} disabled={readOnly} />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  {renderLabel('Contenido de Texto', 'text')}
-                  <textarea
-                    value={p.text || ''}
-                    onChange={(e) => handleChange('text', e.target.value)}
-                    disabled={readOnly}
-                    className="bg-bg-hover border border-border-color text-text-primary p-2 px-3 rounded-md text-xs outline-none transition-all focus:border-primary w-full disabled:opacity-55"
-                    rows={4}
-                  />
-                </div>
-              </>
+              <div className="flex flex-col gap-1.5">
+                {renderLabel('Contenido de Texto', 'text')}
+                <textarea
+                  value={p.text || ''}
+                  onChange={(e) => {
+                    const cleaned = e.target.value.replace(/<\/?[^>]+(>|$)/g, "");
+                    handleChange('text', cleaned);
+                  }}
+                  disabled={readOnly}
+                  className="bg-bg-hover border border-border-color text-text-primary p-2 px-3 rounded-md text-xs outline-none transition-all focus:border-primary w-full disabled:opacity-55"
+                  rows={4}
+                />
+              </div>
             )}
             <div className="flex flex-col gap-1.5">
               {renderLabel('Posición de Imagen', 'imagePosition')}
@@ -627,6 +694,9 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             <div className="flex flex-col gap-1.5">
               <PaddingEditor value={p.padding || '10px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
             </div>
+            <div className="flex flex-col gap-1.5">
+              <MarginEditor value={p.margin || '0px'} onChange={(val) => handleChange('margin', val)} disabled={readOnly} />
+            </div>
           </div>
         );
 
@@ -634,18 +704,18 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
         return (
           <div className="flex flex-col gap-4">
             <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">Tarjeta de Producto</h3>
+            {!isMobileTab && renderAssetField('URL de Imagen', 'imageUrl')}
             {!isMobileTab && (
               <>
-                <div className="flex flex-col gap-1.5">
-                  {renderLabel('URL de Imagen', 'imageUrl')}
-                  <LinkInput value={p.imageUrl || ''} onChange={(val) => handleChange('imageUrl', val)} disabled={readOnly} />
-                </div>
                 <div className="flex flex-col gap-1.5">
                   {renderLabel('Título de Producto', 'title')}
                   <input
                     type="text"
                     value={p.title || ''}
-                    onChange={(e) => handleChange('title', e.target.value)}
+                    onChange={(e) => {
+                      const cleaned = e.target.value.replace(/<\/?[^>]+(>|$)/g, "");
+                      handleChange('title', cleaned);
+                    }}
                     disabled={readOnly}
                     className="bg-bg-hover border border-border-color text-text-primary p-2 px-3 rounded-md text-xs outline-none transition-all focus:border-primary w-full disabled:opacity-55"
                   />
@@ -655,7 +725,10 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                   <input
                     type="text"
                     value={p.price || ''}
-                    onChange={(e) => handleChange('price', e.target.value)}
+                    onChange={(e) => {
+                      const cleaned = e.target.value.replace(/<\/?[^>]+(>|$)/g, "");
+                      handleChange('price', cleaned);
+                    }}
                     disabled={readOnly}
                     className="bg-bg-hover border border-border-color text-text-primary p-2 px-3 rounded-md text-xs outline-none transition-all focus:border-primary w-full disabled:opacity-55"
                   />
@@ -665,7 +738,10 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                   <input
                     type="text"
                     value={p.buttonText || ''}
-                    onChange={(e) => handleChange('buttonText', e.target.value)}
+                    onChange={(e) => {
+                      const cleaned = e.target.value.replace(/<\/?[^>]+(>|$)/g, "");
+                      handleChange('buttonText', cleaned);
+                    }}
                     disabled={readOnly}
                     className="bg-bg-hover border border-border-color text-text-primary p-2 px-3 rounded-md text-xs outline-none transition-all focus:border-primary w-full disabled:opacity-55"
                   />
@@ -685,11 +761,13 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
               <ColorPicker value={p.backgroundColor || '#ffffff'} onChange={(val) => handleChange('backgroundColor', val)} disabled={readOnly} />
             </div>
             <div className="flex flex-col gap-1.5">
-              {renderLabel('Borde Redondeado', 'borderRadius')}
-              <SliderWithInput value={p.borderRadius || 8} onChange={(val) => handleChange('borderRadius', val)} min={0} max={30} unit="px" disabled={readOnly} />
+              <BorderRadiusEditor value={p.borderRadius || '8px'} onChange={(val) => handleChange('borderRadius', val)} disabled={readOnly} />
             </div>
             <div className="flex flex-col gap-1.5">
               <PaddingEditor value={p.padding || '15px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <MarginEditor value={p.margin || '0px'} onChange={(val) => handleChange('margin', val)} disabled={readOnly} />
             </div>
           </div>
         );
@@ -704,7 +782,10 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                   {renderLabel('Texto de la Cita', 'text')}
                   <textarea
                     value={p.text || ''}
-                    onChange={(e) => handleChange('text', e.target.value)}
+                    onChange={(e) => {
+                      const cleaned = e.target.value.replace(/<\/?[^>]+(>|$)/g, "");
+                      handleChange('text', cleaned);
+                    }}
                     disabled={readOnly}
                     className="bg-bg-hover border border-border-color text-text-primary p-2 px-3 rounded-md text-xs outline-none transition-all focus:border-primary w-full disabled:opacity-55"
                     rows={4}
@@ -715,15 +796,15 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                   <input
                     type="text"
                     value={p.author || ''}
-                    onChange={(e) => handleChange('author', e.target.value)}
+                    onChange={(e) => {
+                      const cleaned = e.target.value.replace(/<\/?[^>]+(>|$)/g, "");
+                      handleChange('author', cleaned);
+                    }}
                     disabled={readOnly}
                     className="bg-bg-hover border border-border-color text-text-primary p-2 px-3 rounded-md text-xs outline-none transition-all focus:border-primary w-full disabled:opacity-55"
                   />
                 </div>
-                <div className="flex flex-col gap-1.5">
-                  {renderLabel('Avatar (URL)', 'avatarUrl')}
-                  <LinkInput value={p.avatarUrl || ''} onChange={(val) => handleChange('avatarUrl', val)} disabled={readOnly} />
-                </div>
+                {renderAssetField('Avatar (URL)', 'avatarUrl')}
               </>
             )}
             <div className="flex flex-col gap-1.5">
@@ -735,11 +816,13 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
               <ColorPicker value={p.backgroundColor || '#f9f9f9'} onChange={(val) => handleChange('backgroundColor', val)} disabled={readOnly} />
             </div>
             <div className="flex flex-col gap-1.5">
-              {renderLabel('Borde Redondeado', 'borderRadius')}
-              <SliderWithInput value={p.borderRadius || 4} onChange={(val) => handleChange('borderRadius', val)} min={0} max={30} unit="px" disabled={readOnly} />
+              <BorderRadiusEditor value={p.borderRadius || '4px'} onChange={(val) => handleChange('borderRadius', val)} disabled={readOnly} />
             </div>
             <div className="flex flex-col gap-1.5">
               <PaddingEditor value={p.padding || '15px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <MarginEditor value={p.margin || '0px'} onChange={(val) => handleChange('margin', val)} disabled={readOnly} />
             </div>
           </div>
         );

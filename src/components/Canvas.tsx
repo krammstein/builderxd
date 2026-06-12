@@ -6,13 +6,19 @@ interface CanvasProps {
   deviceMode: DeviceMode;
   onSelectNode: (id: string | null) => void;
   onDropElement?: (blockType: BlockType, targetId: string | null) => void;
+  onDeleteNode?: (id: string) => void;
+  onCloneNode?: (id: string) => void;
+  onUpdateNodeContent?: (id: string, content: string) => void;
 }
 
 export const Canvas: React.FC<CanvasProps> = ({
   htmlContent,
   deviceMode,
   onSelectNode,
-  onDropElement
+  onDropElement,
+  onDeleteNode,
+  onCloneNode,
+  onUpdateNodeContent
 }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const lastHtmlRef = useRef<string>('');
@@ -25,6 +31,12 @@ export const Canvas: React.FC<CanvasProps> = ({
           onSelectNode(event.data.id);
         } else if (event.data.type === 'DROP_ELEMENT') {
           onDropElement?.(event.data.blockType, event.data.targetId);
+        } else if (event.data.type === 'DELETE_ELEMENT') {
+          onDeleteNode?.(event.data.id);
+        } else if (event.data.type === 'CLONE_ELEMENT') {
+          onCloneNode?.(event.data.id);
+        } else if (event.data.type === 'UPDATE_CONTENT') {
+          onUpdateNodeContent?.(event.data.id, event.data.content);
         }
       }
     };
@@ -33,7 +45,7 @@ export const Canvas: React.FC<CanvasProps> = ({
     return () => {
       window.removeEventListener('message', handleIframeMessage);
     };
-  }, [onSelectNode, onDropElement]);
+  }, [onSelectNode, onDropElement, onDeleteNode, onCloneNode, onUpdateNodeContent]);
 
   // Apply DOM patching or reload srcdoc programmatically
   useEffect(() => {
@@ -69,6 +81,10 @@ export const Canvas: React.FC<CanvasProps> = ({
         newElements.forEach((newEl, idx) => {
           const currentEl = currentElements[idx];
           if (currentEl.outerHTML !== newEl.outerHTML) {
+            // Focus Guard: If this element is the current focused element or contains it, do not replace it to preserve caret/focus
+            if (doc.activeElement && (currentEl === doc.activeElement || currentEl.contains(doc.activeElement))) {
+              return;
+            }
             currentEl.outerHTML = newEl.outerHTML;
           }
         });
@@ -191,4 +207,3 @@ export const Canvas: React.FC<CanvasProps> = ({
     </main>
   );
 };
-

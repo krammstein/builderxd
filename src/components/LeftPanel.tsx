@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { BlockType, BlockNode } from '../types';
+import type { BlockType, BlockNode, UIConfig, TemplateMode } from '../types';
 import {
   Type,
   Image,
@@ -35,6 +35,10 @@ interface LeftPanelProps {
   onDeleteNode: (id: string) => void;
   onMoveNode: (id: string, direction: 'up' | 'down') => void;
   readOnly?: boolean;
+  templateMode?: TemplateMode;
+  setTemplateMode?: (mode: TemplateMode) => void;
+  onClearCanvas?: () => void;
+  uiConfig?: UIConfig;
 }
 
 export const LeftPanel: React.FC<LeftPanelProps> = ({
@@ -44,7 +48,11 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
   onSelectNode,
   onDeleteNode,
   onMoveNode,
-  readOnly = false
+  readOnly = false,
+  templateMode = 'mjml',
+  setTemplateMode,
+  onClearCanvas,
+  uiConfig
 }) => {
   const [activeTab, setActiveTab] = useState<'components' | 'layers' | 'assets'>('components');
   const [searchQuery, setSearchQuery] = useState('');
@@ -64,7 +72,6 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
     { type: 'countdown' as BlockType, label: 'Contador', icon: <Clock size={24} /> },
     { type: 'accordion' as BlockType, label: 'Acordeón', icon: <Menu size={24} /> },
     { type: 'carousel' as BlockType, label: 'Carrusel', icon: <Images size={24} /> },
-    // New components
     { type: 'icon' as BlockType, label: 'Icono', icon: <Star size={24} /> },
     { type: 'nav_menu' as BlockType, label: 'Menú Nav', icon: <Menu size={24} /> },
     { type: 'image_text' as BlockType, label: 'Img + Texto', icon: <FileText size={24} /> },
@@ -72,10 +79,18 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
     { type: 'quote' as BlockType, label: 'Cita', icon: <User size={24} /> }
   ];
 
-  const filteredComponents = availableComponents.filter((comp) =>
-    comp.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    comp.type.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Define components that are only valid in MJML template mode
+  const mjmlOnlyTypes: BlockType[] = ['section', 'column', 'accordion', 'carousel', 'countdown'];
+
+  const filteredComponents = availableComponents.filter((comp) => {
+    if (templateMode === 'html' && mjmlOnlyTypes.includes(comp.type)) {
+      return false;
+    }
+    return (
+      comp.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      comp.type.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  });
 
   const toggleCollapse = (id: string) => {
     setCollapsedLayers(prev => ({ ...prev, [id]: !prev[id] }));
@@ -198,9 +213,42 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
       <div className="flex-1 flex flex-col overflow-hidden h-full">
         {activeTab === 'components' && (
           <div className="p-4 flex flex-col overflow-y-auto flex-1 h-full gap-4">
-            <div>
-              <h2 className="text-sm font-semibold text-text-primary mb-2.5">Librería de Componentes</h2>
-              <div className="flex items-center bg-bg-hover border border-border-color rounded-md p-2 px-3 gap-2">
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-text-primary">Librería de Componentes</h2>
+                {uiConfig?.showClearCanvas !== false && onClearCanvas && (
+                  <button
+                    onClick={onClearCanvas}
+                    className="p-1 px-2 text-[10px] font-bold text-red-500 border border-red-500/20 bg-red-500/10 rounded-md cursor-pointer hover:bg-red-500 hover:text-white transition-all border-none shrink-0"
+                    id="btn-clear-canvas"
+                  >
+                    Limpiar
+                  </button>
+                )}
+              </div>
+
+              {uiConfig?.showTemplateModeToggle !== false && setTemplateMode && (
+                <div className="flex bg-bg-hover p-1 rounded-md border border-border-color/80 w-full shrink-0 select-none">
+                  <button
+                    onClick={() => setTemplateMode('html')}
+                    className={`flex-1 text-center py-1 text-[10.5px] font-bold rounded-sm cursor-pointer transition-all border-none ${
+                      templateMode === 'html' ? 'bg-primary text-white' : 'text-text-secondary hover:text-text-primary'
+                    }`}
+                  >
+                    HTML
+                  </button>
+                  <button
+                    onClick={() => setTemplateMode('mjml')}
+                    className={`flex-1 text-center py-1 text-[10.5px] font-bold rounded-sm cursor-pointer transition-all border-none ${
+                      templateMode === 'mjml' ? 'bg-primary text-white' : 'text-text-secondary hover:text-text-primary'
+                    }`}
+                  >
+                    MJML
+                  </button>
+                </div>
+              )}
+
+              <div className="flex items-center bg-bg-hover border border-border-color rounded-md p-2 px-3 gap-2 shrink-0">
                 <Search size={14} className="text-text-muted shrink-0" />
                 <input
                   type="text"

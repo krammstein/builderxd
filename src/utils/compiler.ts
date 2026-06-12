@@ -193,11 +193,19 @@ export const compileToHTML = (
   selectedId: string | null,
   isMobile: boolean = false
 ): string => {
-  const getResponsiveStyle = (node: BlockNode, key: string, defaultValue: string) => {
+  const getResponsiveStyle = (node: BlockNode, key: string, defaultValue: any) => {
     if (isMobile && node.mobileProperties && node.mobileProperties[key] !== undefined) {
       return node.mobileProperties[key];
     }
     return node.properties[key] !== undefined ? node.properties[key] : defaultValue;
+  };
+
+  const formatRadius = (val: any) => {
+    if (val === undefined || val === null) return '0px';
+    const s = String(val);
+    if (!s) return '0px';
+    if (/^\d+$/.test(s)) return `${s}px`;
+    return s;
   };
 
   const renderNode = (node: BlockNode): string => {
@@ -259,7 +267,7 @@ export const compileToHTML = (
         const alt = getResponsiveStyle(node, 'altText', 'image');
         const align = getResponsiveStyle(node, 'align', 'center');
         const padding = getResponsiveStyle(node, 'padding', '10px 20px');
-        const borderRadius = getResponsiveStyle(node, 'borderRadius', '8px');
+        const borderRadius = formatRadius(getResponsiveStyle(node, 'borderRadius', '8px'));
         return `
           <div data-id="${node.id}" class="builder-element${isSelectedClass}" style="text-align: ${align}; padding: ${padding}; box-sizing: border-box;">
             <img src="${url}" alt="${alt}" style="max-width: 100%; height: auto; border-radius: ${borderRadius}; display: inline-block; vertical-align: middle;" />
@@ -269,7 +277,7 @@ export const compileToHTML = (
       case 'button': {
         const bg = getResponsiveStyle(node, 'backgroundColor', '#4F46E5');
         const color = getResponsiveStyle(node, 'color', '#ffffff');
-        const radius = getResponsiveStyle(node, 'borderRadius', '6px');
+        const radius = formatRadius(getResponsiveStyle(node, 'borderRadius', '6px'));
         const padding = getResponsiveStyle(node, 'padding', '12px 24px');
         const align = getResponsiveStyle(node, 'align', 'center');
         const content = node.properties.content || 'Haga clic aquí';
@@ -471,7 +479,7 @@ export const compileToHTML = (
         const btnUrl = node.properties.buttonUrl || '#';
         const color = getResponsiveStyle(node, 'color', '#4f46e5');
         const bg = getResponsiveStyle(node, 'backgroundColor', '#ffffff');
-        const radius = getResponsiveStyle(node, 'borderRadius', '8px');
+        const radius = formatRadius(getResponsiveStyle(node, 'borderRadius', '8px'));
         const padding = getResponsiveStyle(node, 'padding', '15px');
         return `
           <div data-id="${node.id}" class="builder-element${isSelectedClass}" style="padding: ${padding}; box-sizing: border-box;">
@@ -491,7 +499,7 @@ export const compileToHTML = (
         const author = node.properties.author || 'Autor de Cita';
         const color = getResponsiveStyle(node, 'color', '#555555');
         const bg = getResponsiveStyle(node, 'backgroundColor', '#f9f9f9');
-        const radius = getResponsiveStyle(node, 'borderRadius', '4px');
+        const radius = formatRadius(getResponsiveStyle(node, 'borderRadius', '4px'));
         const padding = getResponsiveStyle(node, 'padding', '15px');
         return `
           <div data-id="${node.id}" class="builder-element${isSelectedClass}" style="padding: ${padding}; box-sizing: border-box;">
@@ -640,6 +648,10 @@ export const compileToHTML = (
       <script>
         // Send selected ID back to parent window
         document.body.addEventListener('click', function(e) {
+          // If clicking toolbar elements, ignore selection
+          if (e.target.closest('#builder-inline-toolbar')) {
+            return;
+          }
           const el = e.target.closest('[data-id]');
           if (el) {
             e.preventDefault();
@@ -650,6 +662,73 @@ export const compileToHTML = (
             }, '*');
           }
         }, true);
+
+        // Manage floating toolbar and inline editing
+        const updateToolbar = () => {
+          let toolbar = document.getElementById('builder-inline-toolbar');
+          if (!toolbar) {
+            toolbar = document.createElement('div');
+            toolbar.id = 'builder-inline-toolbar';
+            toolbar.style.cssText = 'position: absolute; display: none; background: #4F46E5; color: white; gap: 4px; padding: 2px 5px; border-radius: 4px; z-index: 99999; font-size: 11px; font-family: system-ui, sans-serif; font-weight: bold; pointer-events: auto; align-items: center; box-shadow: 0 2px 6px rgba(0,0,0,0.15);';
+            toolbar.innerHTML = 
+              '<span id="tb-drag" style="cursor: move; padding: 2px 4px; user-select: none;" title="Mover">☰</span>' +
+              '<button id="tb-clone" type="button" style="cursor: pointer; padding: 2px 4px; background: transparent; border: none; color: white; font-size: 11px; font-weight: bold;" title="Duplicar">❐</button>' +
+              '<button id="tb-delete" type="button" style="cursor: pointer; padding: 2px 4px; background: #ef4444; border: none; color: white; font-size: 11px; font-weight: bold; border-radius: 2px;" title="Eliminar">🗑</button>';
+            document.body.appendChild(toolbar);
+
+            toolbar.addEventListener('click', (e) => e.stopPropagation());
+
+            toolbar.querySelector('#tb-delete').addEventListener('click', () => {
+              const id = toolbar.getAttribute('data-target-id');
+              if (id) window.parent.postMessage({ type: 'DELETE_ELEMENT', id }, '*');
+            });
+
+            toolbar.querySelector('#tb-clone').addEventListener('click', () => {
+              const id = toolbar.getAttribute('data-target-id');
+              if (id) window.parent.postMessage({ type: 'CLONE_ELEMENT', id }, '*');
+            });
+          }
+
+          const selected = document.querySelector('.builder-element-selected');
+          if (selected) {
+            const rect = selected.getBoundingClientRect();
+            const scrollY = window.scrollY || document.documentElement.scrollTop;
+            const scrollX = window.scrollX || document.documentElement.scrollLeft;
+
+            // Positioning toolbar right above selected element
+            toolbar.style.top = (rect.top + scrollY - 26) + 'px';
+            toolbar.style.left = (rect.left + scrollX) + 'px';
+            toolbar.style.display = 'flex';
+            toolbar.setAttribute('data-target-id', selected.getAttribute('data-id'));
+
+            // If the element has text contents, make it contenteditable inline
+            const id = selected.getAttribute('data-id');
+            if (id && (id.startsWith('text-') || id.startsWith('button-'))) {
+              selected.setAttribute('contenteditable', 'true');
+              selected.style.outline = 'none';
+
+              if (!selected.getAttribute('data-editable-bound')) {
+                selected.setAttribute('data-editable-bound', 'true');
+                selected.addEventListener('input', () => {
+                  window.parent.postMessage({
+                    type: 'UPDATE_CONTENT',
+                    id,
+                    content: selected.innerText // Plain text only as required
+                  }, '*');
+                });
+              }
+            }
+          } else {
+            toolbar.style.display = 'none';
+          }
+        };
+
+        // Watch DOM mutations to reposition toolbar or bound editable events
+        window.addEventListener('load', updateToolbar);
+        const observer = new MutationObserver(updateToolbar);
+        observer.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class'] });
+        window.addEventListener('scroll', updateToolbar);
+        window.addEventListener('resize', updateToolbar);
       </script>
     </body>
     </html>

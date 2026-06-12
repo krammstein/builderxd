@@ -2,19 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { Link2, Link2Off } from 'lucide-react';
 import { SliderWithInput } from './SliderWithInput';
 
-interface PaddingEditorProps {
+interface MarginEditorProps {
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
 }
 
-export const PaddingEditor: React.FC<PaddingEditorProps> = ({
-  value = '10px',
+export const MarginEditor: React.FC<MarginEditorProps> = ({
+  value = '0px',
   onChange,
   disabled = false,
 }) => {
   const [isLinked, setIsLinked] = useState(true);
-  const [padding, setPadding] = useState({ top: 10, right: 10, bottom: 10, left: 10 });
+  const [margin, setMargin] = useState({ top: 0, right: 0, bottom: 0, left: 0 });
 
   useEffect(() => {
     const parts = value.split(' ').map(p => parseInt(p) || 0);
@@ -33,7 +33,7 @@ export const PaddingEditor: React.FC<PaddingEditorProps> = ({
       [top, right, bottom, left] = parts;
     }
 
-    setPadding({ top, right, bottom, left });
+    setMargin({ top, right, bottom, left });
     if (top === right && right === bottom && bottom === left) {
       setIsLinked(true);
     } else {
@@ -41,9 +41,9 @@ export const PaddingEditor: React.FC<PaddingEditorProps> = ({
     }
   }, [value]);
 
-  const updatePadding = (sides: Partial<typeof padding>) => {
-    const next = { ...padding, ...sides };
-    setPadding(next);
+  const updateMargin = (sides: Partial<typeof margin>) => {
+    const next = { ...margin, ...sides };
+    setMargin(next);
 
     if (isLinked) {
       const updatedValue = Object.values(sides)[0] ?? 0;
@@ -58,7 +58,7 @@ export const PaddingEditor: React.FC<PaddingEditorProps> = ({
   const handleToggleLinked = () => {
     setIsLinked(!isLinked);
     if (!isLinked) {
-      const topVal = padding.top;
+      const topVal = margin.top;
       onChange(`${topVal}px`);
     }
   };
@@ -66,7 +66,7 @@ export const PaddingEditor: React.FC<PaddingEditorProps> = ({
   return (
     <div className="flex flex-col gap-3 bg-bg-hover border border-border-color rounded-lg p-3 w-full">
       <div className="flex items-center justify-between border-b border-border-color/30 pb-2 select-none">
-        <span className="text-[10px] text-text-muted font-bold uppercase">Espaciado (Padding)</span>
+        <span className="text-[10px] text-text-muted font-bold uppercase">Margen (Margin)</span>
         <button
           type="button"
           disabled={disabled}
@@ -75,7 +75,7 @@ export const PaddingEditor: React.FC<PaddingEditorProps> = ({
             isLinked ? 'bg-primary/15 text-primary' : 'text-text-muted hover:text-text-primary'
           }`}
           title={isLinked ? 'Valores vinculados' : 'Valores independientes'}
-          id="pad-link-btn"
+          id="margin-link-btn"
         >
           {isLinked ? <Link2 size={14} /> : <Link2Off size={14} />}
         </button>
@@ -85,8 +85,8 @@ export const PaddingEditor: React.FC<PaddingEditorProps> = ({
         <div className="flex flex-col gap-1">
           <label className="text-[10px] text-text-muted">Todos los lados</label>
           <SliderWithInput
-            value={padding.top}
-            onChange={(val) => updatePadding({ top: val, right: val, bottom: val, left: val })}
+            value={margin.top}
+            onChange={(val) => updateMargin({ top: val, right: val, bottom: val, left: val })}
             min={0}
             max={100}
             unit="px"
@@ -98,8 +98,8 @@ export const PaddingEditor: React.FC<PaddingEditorProps> = ({
           <div className="flex flex-col gap-1">
             <label className="text-[10px] text-text-muted">Arriba (Top)</label>
             <SliderWithInput
-              value={padding.top}
-              onChange={(val) => updatePadding({ top: val })}
+              value={margin.top}
+              onChange={(val) => updateMargin({ top: val })}
               min={0}
               max={100}
               unit="px"
@@ -110,8 +110,8 @@ export const PaddingEditor: React.FC<PaddingEditorProps> = ({
           <div className="flex flex-col gap-1">
             <label className="text-[10px] text-text-muted">Derecha (Right)</label>
             <SliderWithInput
-              value={padding.right}
-              onChange={(val) => updatePadding({ right: val })}
+              value={margin.right}
+              onChange={(val) => updateMargin({ right: val })}
               min={0}
               max={100}
               unit="px"
@@ -122,8 +122,8 @@ export const PaddingEditor: React.FC<PaddingEditorProps> = ({
           <div className="flex flex-col gap-1">
             <label className="text-[10px] text-text-muted">Abajo (Bottom)</label>
             <SliderWithInput
-              value={padding.bottom}
-              onChange={(val) => updatePadding({ bottom: val })}
+              value={margin.bottom}
+              onChange={(val) => updateMargin({ bottom: val })}
               min={0}
               max={100}
               unit="px"
@@ -134,8 +134,8 @@ export const PaddingEditor: React.FC<PaddingEditorProps> = ({
           <div className="flex flex-col gap-1">
             <label className="text-[10px] text-text-muted">Izquierda (Left)</label>
             <SliderWithInput
-              value={padding.left}
-              onChange={(val) => updatePadding({ left: val })}
+              value={margin.left}
+              onChange={(val) => updateMargin({ left: val })}
               min={0}
               max={100}
               unit="px"
