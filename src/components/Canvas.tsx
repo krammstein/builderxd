@@ -30,7 +30,6 @@ export const Canvas: React.FC<CanvasProps> = ({
     const handleIframeMessage = (event: MessageEvent) => {
       if (event.data) {
         if (event.data.type === 'SELECT_ELEMENT') {
-          console.log('[Canvas] SELECT_ELEMENT:', event.data.id);
           onSelectNode(event.data.id);
         } else if (event.data.type === 'DROP_ELEMENT') {
           onDropElement?.(event.data.blockType, event.data.targetId);
@@ -63,6 +62,11 @@ export const Canvas: React.FC<CanvasProps> = ({
     if (!lastHtmlRef.current || !doc || !doc.body || doc.body.innerHTML.trim() === '') {
       iframe.srcdoc = htmlContent;
       lastHtmlRef.current = htmlContent;
+      setTimeout(() => {
+        const d = iframe.contentDocument || iframe.contentWindow?.document;
+        if (d) {
+        }
+      }, 300);
       return;
     }
 
@@ -82,21 +86,48 @@ export const Canvas: React.FC<CanvasProps> = ({
         currentIds.every((id, idx) => id === newIds[idx]);
 
       if (structureMatches && currentElements.length > 0) {
-        // Patch each element if its outerHTML has changed
+        // Find all changed elements and their IDs
+        const changedIds = new Set<string>();
+        const changed: { current: Element; new: Element }[] = [];
         newElements.forEach((newEl, idx) => {
           const currentEl = currentElements[idx];
           if (currentEl.outerHTML !== newEl.outerHTML) {
-            // Focus Guard: If this element is the current focused element or contains it, do not replace it to preserve caret/focus
-            // However, if the user is typing in the inspector panel inputs (parent window), we must let the update go through.
-            const isEditingInParent = window.document.activeElement && 
-              (window.document.activeElement.tagName === 'INPUT' || 
-               window.document.activeElement.tagName === 'TEXTAREA' || 
-               window.document.activeElement.tagName === 'SELECT');
+            changed.push({ current: currentEl, new: newEl });
+            changedIds.add(currentEl.getAttribute('data-id') || '');
+          }
+        });
 
-            if (!isEditingInParent && doc.activeElement && (currentEl === doc.activeElement || currentEl.contains(doc.activeElement))) {
-              return;
+        // Only patch deepest changed elements (skip if this element CONTAINS another changed element inside it)
+        changed.forEach(({ current, new: newEl }) => {
+          const hasChangedDescendant = changed.some(({ current: other }) => {
+            return other !== current && current.contains(other);
+          });
+          if (hasChangedDescendant) return;
+
+          const id = newEl.getAttribute('data-id');
+          const isEditingInParent = window.document.activeElement && 
+            (window.document.activeElement.tagName === 'INPUT' || 
+             window.document.activeElement.tagName === 'TEXTAREA' || 
+             window.document.activeElement.tagName === 'SELECT');
+
+          if (!isEditingInParent && doc.activeElement && (current === doc.activeElement || current.contains(doc.activeElement))) {
+            return;
+          }
+          current.outerHTML = newEl.outerHTML;
+
+          // Verify patch took effect
+          const patchedEl = doc.querySelector(`[data-id="${id}"]`);
+          if (!patchedEl && id) {
+            console.warn('[Canvas] outerHTML replacement failed for', id, '- reloading iframe');
+            iframe.srcdoc = htmlContent;
+          }
+          // Direct textContent fallback for data-prop elements (ensures text content is always visible)
+          const contentSpan = doc.querySelector(`[data-id="${id}"] [data-prop="content"]`);
+          if (contentSpan) {
+            const newContentSpan = newEl.querySelector('[data-prop="content"]');
+            if (newContentSpan && contentSpan.textContent !== newContentSpan.textContent) {
+              contentSpan.textContent = newContentSpan.textContent;
             }
-            currentEl.outerHTML = newEl.outerHTML;
           }
         });
 

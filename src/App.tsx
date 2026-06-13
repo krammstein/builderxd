@@ -118,6 +118,7 @@ const INITIAL_TEMPLATE: BlockNode[] = [
               url: 'https://example.com',
               backgroundColor: '#4F46E5',
               color: '#ffffff',
+              fontSize: '16px',
               borderRadius: '6px',
               align: 'center',
               padding: '12px 24px'
@@ -512,10 +513,11 @@ const App = forwardRef<any, AppProps>(({
         };
       case 'button':
         return {
-          content: 'Haga clic aquí',
+          content: 'Comenzar Ahora',
           url: 'https://example.com',
           backgroundColor: '#4F46E5',
           color: '#ffffff',
+          fontSize: '16px',
           borderRadius: '6px',
           align: 'center',
           padding: '12px 24px'

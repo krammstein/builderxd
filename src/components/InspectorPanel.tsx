@@ -414,6 +414,14 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
               </div>
             )}
             <div className="flex flex-col gap-1.5">
+              {renderLabel('Tipografía', 'fontFamily')}
+              <FontFamilyPicker value={p.fontFamily || 'Arial'} onChange={(val) => handleChange('fontFamily', val)} disabled={readOnly} googleFonts={googleFonts} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Tamaño de Texto', 'fontSize')}
+              <NumberStepper value={p.fontSize || 16} onChange={(val) => handleChange('fontSize', val)} min={8} max={96} unit="px" disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
               {renderLabel('Color de Botón', 'backgroundColor')}
               <ColorPicker value={p.backgroundColor || '#4f46e5'} onChange={(val) => handleChange('backgroundColor', val)} disabled={readOnly} />
             </div>

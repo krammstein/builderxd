@@ -102,7 +102,8 @@ export const compileToMJML = (nodes: BlockNode[]): string => {
         const pad = styleAttr('padding', 'padding');
         const align = styleAttr('align', 'align');
         const font = styleAttr('fontFamily', 'font-family');
-        return `${indent}<mj-button${href}${bg}${color}${radius}${pad}${align}${font}>${props.content || ''}</mj-button>\n`;
+        const size = styleAttr('fontSize', 'font-size');
+        return `${indent}<mj-button${href}${bg}${color}${radius}${pad}${align}${font}${size}>${props.content || ''}</mj-button>\n`;
       }
       case 'divider': {
         const color = styleAttr('color', 'border-color');
@@ -333,12 +334,13 @@ export const compileToHTML = (
         const radius = formatRadius(getResponsiveStyle(node, 'borderRadius', '6px'));
         const padding = getResponsiveStyle(node, 'padding', '12px 24px');
         const align = getResponsiveStyle(node, 'align', 'center');
+        const fontSize = getResponsiveStyle(node, 'fontSize', '16px');
         const content = node.properties.content || 'Haga clic aquí';
         const url = node.properties.url || '#';
         return `
           <div data-id="${node.id}" class="builder-element${isSelectedClass}" style="text-align: ${align}; padding: 10px 20px; box-sizing: border-box;">
-            <a href="${url}" style="background-color: ${bg}; color: ${color}; border-radius: ${radius}; padding: ${padding}; display: inline-block; text-decoration: none; font-weight: 500; font-family: ${font};" target="_blank">
-              ${content}
+            <a href="${url}" style="background-color: ${bg}; color: ${color}; border-radius: ${radius}; padding: ${padding}; display: inline-block; text-decoration: none; font-weight: 500; font-family: ${font}; font-size: ${fontSize};" target="_blank">
+              <span data-prop="content">${content}</span>
             </a>
           </div>
         `;
@@ -711,6 +713,12 @@ ${fontLinks}
       </div>
 
       <script>
+        // Prevent all anchor navigation in the builder preview
+        document.body.addEventListener('click', function(e) {
+          const link = e.target.closest('a[href]');
+          if (link) e.preventDefault();
+        }, true);
+
         // Send selected ID back to parent window
         document.body.addEventListener('click', function(e) {
           // If clicking toolbar elements, ignore selection
@@ -820,84 +828,88 @@ ${fontLinks}
                 }
               });
 
-              if (!formatRow) {
+              const isButton = id && id.startsWith('button-');
+
+              if (!formatRow && !isButton) {
                 formatRow = document.createElement('div');
                 formatRow.id = 'tb-format-row';
                 formatRow.style.cssText = 'display: flex; gap: 4px; border-top: 1px solid #374151; padding-top: 4px; margin-top: 2px; align-items: center;';
                 toolbar.appendChild(formatRow);
               }
 
-              // Apply styles to the focused editable element, or the first one
-              let activeTarget = editableElements[0];
-              const activeEl = document.activeElement;
-              if (activeEl && editableElements.includes(activeEl)) {
-                activeTarget = activeEl;
+              if (!isButton) {
+                // Apply styles to the focused editable element, or the first one
+                let activeTarget = editableElements[0];
+                const activeEl = document.activeElement;
+                if (activeEl && editableElements.includes(activeEl)) {
+                  activeTarget = activeEl;
+                }
+
+                const isB = activeTarget.style.fontWeight === 'bold' || activeTarget.style.fontWeight === '700';
+                const isI = activeTarget.style.fontStyle === 'italic';
+                const isU = activeTarget.style.textDecoration.includes('underline');
+                const textAlign = activeTarget.style.textAlign || 'left';
+                const activeFont = activeTarget.style.fontFamily || 'Arial';
+                const activeSize = activeTarget.style.fontSize || '16px';
+
+                const fontsList = ['Arial', 'Georgia', 'Verdana', 'Tahoma', 'Times New Roman', 'Courier New', 'Trebuchet MS', 'Inter', 'Roboto', 'Outfit', 'Poppins', 'Lato', 'Montserrat', 'Open Sans', 'Nunito', 'Raleway', 'Playfair Display'];
+                const fontOptions = fontsList.map(f => '<option value="' + f + '"' + (activeFont.includes(f) ? ' selected' : '') + '>' + f + '</option>').join('');
+
+                formatRow.innerHTML = 
+                  '<button type="button" class="tb-btn' + (isB ? ' active' : '') + '" id="tb-bold" style="font-weight:bold;">B</button>' +
+                  '<button type="button" class="tb-btn' + (isI ? ' active' : '') + '" id="tb-italic" style="font-style:italic;">I</button>' +
+                  '<button type="button" class="tb-btn' + (isU ? ' active' : '') + '" id="tb-underline" style="text-decoration:underline;">U</button>' +
+                  '<select id="tb-font-family" style="background:#374151;color:white;border:1px solid #4b5563;font-size:10px;border-radius:3px;padding:2px 4px;max-width:85px;outline:none;cursor:pointer;">' + fontOptions + '</select>' +
+                  '<input type="text" id="tb-font-size" style="background:#374151;color:white;border:1px solid #4b5563;font-size:10px;border-radius:3px;padding:2px 4px;width:38px;outline:none;text-align:center;" value="' + activeSize + '" />' +
+                  '<button type="button" class="tb-btn' + (textAlign === 'left' ? ' active' : '') + '" id="tb-align-left" title="Izquierda">⬅</button>' +
+                  '<button type="button" class="tb-btn' + (textAlign === 'center' ? ' active' : '') + '" id="tb-align-center" title="Centro">↔</button>' +
+                  '<button type="button" class="tb-btn' + (textAlign === 'right' ? ' active' : '') + '" id="tb-align-right" title="Derecha">➡</button>';
+
+                // Listeners
+                formatRow.querySelector('#tb-bold').onclick = () => {
+                  const nextVal = (activeTarget.style.fontWeight === 'bold' || activeTarget.style.fontWeight === '700') ? 'normal' : 'bold';
+                  activeTarget.style.fontWeight = nextVal;
+                  window.parent.postMessage({ type: 'UPDATE_PROPERTIES', id, properties: { fontWeight: nextVal } }, '*');
+                  updateToolbar();
+                };
+                formatRow.querySelector('#tb-italic').onclick = () => {
+                  const nextVal = activeTarget.style.fontStyle === 'italic' ? 'normal' : 'italic';
+                  activeTarget.style.fontStyle = nextVal;
+                  window.parent.postMessage({ type: 'UPDATE_PROPERTIES', id, properties: { fontStyle: nextVal } }, '*');
+                  updateToolbar();
+                };
+                formatRow.querySelector('#tb-underline').onclick = () => {
+                  const nextVal = activeTarget.style.textDecoration.includes('underline') ? 'none' : 'underline';
+                  activeTarget.style.textDecoration = nextVal;
+                  window.parent.postMessage({ type: 'UPDATE_PROPERTIES', id, properties: { textDecoration: nextVal } }, '*');
+                  updateToolbar();
+                };
+                formatRow.querySelector('#tb-font-family').onchange = (e) => {
+                  const nextVal = e.target.value;
+                  activeTarget.style.fontFamily = nextVal;
+                  window.parent.postMessage({ type: 'UPDATE_PROPERTIES', id, properties: { fontFamily: nextVal } }, '*');
+                };
+                formatRow.querySelector('#tb-font-size').onchange = (e) => {
+                  const nextVal = e.target.value;
+                  activeTarget.style.fontSize = nextVal;
+                  window.parent.postMessage({ type: 'UPDATE_PROPERTIES', id, properties: { fontSize: nextVal } }, '*');
+                };
+                formatRow.querySelector('#tb-align-left').onclick = () => {
+                  activeTarget.style.textAlign = 'left';
+                  window.parent.postMessage({ type: 'UPDATE_PROPERTIES', id, properties: { align: 'left' } }, '*');
+                  updateToolbar();
+                };
+                formatRow.querySelector('#tb-align-center').onclick = () => {
+                  activeTarget.style.textAlign = 'center';
+                  window.parent.postMessage({ type: 'UPDATE_PROPERTIES', id, properties: { align: 'center' } }, '*');
+                  updateToolbar();
+                };
+                formatRow.querySelector('#tb-align-right').onclick = () => {
+                  activeTarget.style.textAlign = 'right';
+                  window.parent.postMessage({ type: 'UPDATE_PROPERTIES', id, properties: { align: 'right' } }, '*');
+                  updateToolbar();
+                };
               }
-
-              const isB = activeTarget.style.fontWeight === 'bold' || activeTarget.style.fontWeight === '700';
-              const isI = activeTarget.style.fontStyle === 'italic';
-              const isU = activeTarget.style.textDecoration.includes('underline');
-              const textAlign = activeTarget.style.textAlign || 'left';
-              const activeFont = activeTarget.style.fontFamily || 'Arial';
-              const activeSize = activeTarget.style.fontSize || '16px';
-
-              const fontsList = ['Arial', 'Georgia', 'Verdana', 'Tahoma', 'Times New Roman', 'Courier New', 'Trebuchet MS', 'Inter', 'Roboto', 'Outfit', 'Poppins', 'Lato', 'Montserrat', 'Open Sans', 'Nunito', 'Raleway', 'Playfair Display'];
-              const fontOptions = fontsList.map(f => '<option value="' + f + '"' + (activeFont.includes(f) ? ' selected' : '') + '>' + f + '</option>').join('');
-
-              formatRow.innerHTML = 
-                '<button type="button" class="tb-btn' + (isB ? ' active' : '') + '" id="tb-bold" style="font-weight:bold;">B</button>' +
-                '<button type="button" class="tb-btn' + (isI ? ' active' : '') + '" id="tb-italic" style="font-style:italic;">I</button>' +
-                '<button type="button" class="tb-btn' + (isU ? ' active' : '') + '" id="tb-underline" style="text-decoration:underline;">U</button>' +
-                '<select id="tb-font-family" style="background:#374151;color:white;border:1px solid #4b5563;font-size:10px;border-radius:3px;padding:2px 4px;max-width:85px;outline:none;cursor:pointer;">' + fontOptions + '</select>' +
-                '<input type="text" id="tb-font-size" style="background:#374151;color:white;border:1px solid #4b5563;font-size:10px;border-radius:3px;padding:2px 4px;width:38px;outline:none;text-align:center;" value="' + activeSize + '" />' +
-                '<button type="button" class="tb-btn' + (textAlign === 'left' ? ' active' : '') + '" id="tb-align-left" title="Izquierda">⬅</button>' +
-                '<button type="button" class="tb-btn' + (textAlign === 'center' ? ' active' : '') + '" id="tb-align-center" title="Centro">↔</button>' +
-                '<button type="button" class="tb-btn' + (textAlign === 'right' ? ' active' : '') + '" id="tb-align-right" title="Derecha">➡</button>';
-
-              // Listeners
-              formatRow.querySelector('#tb-bold').onclick = () => {
-                const nextVal = (activeTarget.style.fontWeight === 'bold' || activeTarget.style.fontWeight === '700') ? 'normal' : 'bold';
-                activeTarget.style.fontWeight = nextVal;
-                window.parent.postMessage({ type: 'UPDATE_PROPERTIES', id, properties: { fontWeight: nextVal } }, '*');
-                updateToolbar();
-              };
-              formatRow.querySelector('#tb-italic').onclick = () => {
-                const nextVal = activeTarget.style.fontStyle === 'italic' ? 'normal' : 'italic';
-                activeTarget.style.fontStyle = nextVal;
-                window.parent.postMessage({ type: 'UPDATE_PROPERTIES', id, properties: { fontStyle: nextVal } }, '*');
-                updateToolbar();
-              };
-              formatRow.querySelector('#tb-underline').onclick = () => {
-                const nextVal = activeTarget.style.textDecoration.includes('underline') ? 'none' : 'underline';
-                activeTarget.style.textDecoration = nextVal;
-                window.parent.postMessage({ type: 'UPDATE_PROPERTIES', id, properties: { textDecoration: nextVal } }, '*');
-                updateToolbar();
-              };
-              formatRow.querySelector('#tb-font-family').onchange = (e) => {
-                const nextVal = e.target.value;
-                activeTarget.style.fontFamily = nextVal;
-                window.parent.postMessage({ type: 'UPDATE_PROPERTIES', id, properties: { fontFamily: nextVal } }, '*');
-              };
-              formatRow.querySelector('#tb-font-size').onchange = (e) => {
-                const nextVal = e.target.value;
-                activeTarget.style.fontSize = nextVal;
-                window.parent.postMessage({ type: 'UPDATE_PROPERTIES', id, properties: { fontSize: nextVal } }, '*');
-              };
-              formatRow.querySelector('#tb-align-left').onclick = () => {
-                activeTarget.style.textAlign = 'left';
-                window.parent.postMessage({ type: 'UPDATE_PROPERTIES', id, properties: { align: 'left' } }, '*');
-                updateToolbar();
-              };
-              formatRow.querySelector('#tb-align-center').onclick = () => {
-                activeTarget.style.textAlign = 'center';
-                window.parent.postMessage({ type: 'UPDATE_PROPERTIES', id, properties: { align: 'center' } }, '*');
-                updateToolbar();
-              };
-              formatRow.querySelector('#tb-align-right').onclick = () => {
-                activeTarget.style.textAlign = 'right';
-                window.parent.postMessage({ type: 'UPDATE_PROPERTIES', id, properties: { align: 'right' } }, '*');
-                updateToolbar();
-              };
             } else {
               if (formatRow) {
                 formatRow.remove();
