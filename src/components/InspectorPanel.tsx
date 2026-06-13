@@ -242,57 +242,67 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                 )}
               </div>
             )}
-            <div className="flex flex-col gap-1.5">
-              {renderLabel('Tipografía', 'fontFamily')}
-              <FontFamilyPicker value={p.fontFamily || 'Arial'} onChange={(val) => handleChange('fontFamily', val)} disabled={readOnly} googleFonts={googleFonts} />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              {renderLabel('Tamaño de Texto', 'fontSize')}
-              <NumberStepper value={p.fontSize || 16} onChange={(val) => handleChange('fontSize', val)} min={8} max={96} unit="px" disabled={readOnly} />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              {renderLabel('Estilo / Formato', 'fontWeight')}
-              <div className="flex bg-bg-hover p-1 rounded-md border border-border-color/80 w-full shrink-0 select-none gap-1">
-                <button
-                  type="button"
-                  onClick={() => handleChange('fontWeight', p.fontWeight === 'bold' || p.fontWeight === '700' ? 'normal' : 'bold')}
-                  className={`flex-1 text-center py-1 text-xs font-bold rounded-md cursor-pointer transition-all border-none ${
-                    p.fontWeight === 'bold' || p.fontWeight === '700' ? 'bg-bg-panel text-primary shadow-sm' : 'text-text-secondary bg-transparent hover:text-text-primary'
-                  }`}
-                  disabled={readOnly}
-                >
-                  B
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleChange('fontStyle', p.fontStyle === 'italic' ? 'normal' : 'italic')}
-                  className={`flex-1 text-center py-1 text-xs italic rounded-md cursor-pointer transition-all border-none ${
-                    p.fontStyle === 'italic' ? 'bg-bg-panel text-primary shadow-sm' : 'text-text-secondary bg-transparent hover:text-text-primary'
-                  }`}
-                  disabled={readOnly}
-                >
-                  I
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleChange('textDecoration', p.textDecoration === 'underline' ? 'none' : 'underline')}
-                  className={`flex-1 text-center py-1 text-xs underline rounded-md cursor-pointer transition-all border-none ${
-                    p.textDecoration === 'underline' ? 'bg-bg-panel text-primary shadow-sm' : 'text-text-secondary bg-transparent hover:text-text-primary'
-                  }`}
-                  disabled={readOnly}
-                >
-                  U
-                </button>
+            {selectedNode.type !== 'text' && (
+              <div className="flex flex-col gap-1.5">
+                {renderLabel('Tipografía', 'fontFamily')}
+                <FontFamilyPicker value={p.fontFamily || 'Arial'} onChange={(val) => handleChange('fontFamily', val)} disabled={readOnly} googleFonts={googleFonts} />
               </div>
-            </div>
-            <div className="flex flex-col gap-1.5">
-              {renderLabel('Alineación', 'align')}
-              <AlignButtonGroup value={p.align || 'left'} options={['left', 'center', 'right', 'justify']} onChange={(val) => handleChange('align', val as any)} disabled={readOnly} />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              {renderLabel('Color', 'color')}
-              <ColorPicker value={p.color || '#1a1a1a'} onChange={(val) => handleChange('color', val)} disabled={readOnly} />
-            </div>
+            )}
+            {selectedNode.type !== 'text' && (
+              <div className="flex flex-col gap-1.5">
+                {renderLabel('Tamaño de Texto', 'fontSize')}
+                <NumberStepper value={p.fontSize || 16} onChange={(val) => handleChange('fontSize', val)} min={8} max={96} unit="px" disabled={readOnly} />
+              </div>
+            )}
+            {selectedNode.type !== 'text' && (
+              <div className="flex flex-col gap-1.5">
+                {renderLabel('Estilo / Formato', 'fontWeight')}
+                <div className="flex bg-bg-hover p-1 rounded-md border border-border-color/80 w-full shrink-0 select-none gap-1">
+                  <button
+                    type="button"
+                    onClick={() => handleChange('fontWeight', p.fontWeight === 'bold' || p.fontWeight === '700' ? 'normal' : 'bold')}
+                    className={`flex-1 text-center py-1 text-xs font-bold rounded-md cursor-pointer transition-all border-none ${
+                      p.fontWeight === 'bold' || p.fontWeight === '700' ? 'bg-bg-panel text-primary shadow-sm' : 'text-text-secondary bg-transparent hover:text-text-primary'
+                    }`}
+                    disabled={readOnly}
+                  >
+                    B
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleChange('fontStyle', p.fontStyle === 'italic' ? 'normal' : 'italic')}
+                    className={`flex-1 text-center py-1 text-xs italic rounded-md cursor-pointer transition-all border-none ${
+                      p.fontStyle === 'italic' ? 'bg-bg-panel text-primary shadow-sm' : 'text-text-secondary bg-transparent hover:text-text-primary'
+                    }`}
+                    disabled={readOnly}
+                  >
+                    I
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleChange('textDecoration', p.textDecoration === 'underline' ? 'none' : 'underline')}
+                    className={`flex-1 text-center py-1 text-xs underline rounded-md cursor-pointer transition-all border-none ${
+                      p.textDecoration === 'underline' ? 'bg-bg-panel text-primary shadow-sm' : 'text-text-secondary bg-transparent hover:text-text-primary'
+                    }`}
+                    disabled={readOnly}
+                  >
+                    U
+                  </button>
+                </div>
+              </div>
+            )}
+            {selectedNode.type !== 'text' && (
+              <div className="flex flex-col gap-1.5">
+                {renderLabel('Alineación', 'align')}
+                <AlignButtonGroup value={p.align || 'left'} options={['left', 'center', 'right', 'justify']} onChange={(val) => handleChange('align', val as any)} disabled={readOnly} />
+              </div>
+            )}
+            {selectedNode.type !== 'text' && (
+              <div className="flex flex-col gap-1.5">
+                {renderLabel('Color', 'color')}
+                <ColorPicker value={p.color || '#1a1a1a'} onChange={(val) => handleChange('color', val)} disabled={readOnly} />
+              </div>
+            )}
             <div className="flex flex-col gap-1.5">
               <PaddingEditor value={p.padding || '10px 20px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
             </div>

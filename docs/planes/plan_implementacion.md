@@ -2,37 +2,64 @@
 
 Este documento refleja el estado actual de la refactorización y desarrollo de funcionalidades del constructor de plantillas, dividido por fases estratégicas.
 
-## Fases Completadas (Fases 1, 2 y 3) ✅
-- **Centralización y Estructura:** Se refactorizaron componentes clave y se unificó la lógica del DOM (`App.tsx`, `ComponentRegistry.tsx`).
-- **Motor de Renderizado (`compiler.ts`):** 
-  - Se desarrolló la compilación recursiva para soportar tanto modo **HTML** puro como **MJML**.
-  - Se añadieron capacidades para nuevos componentes contenedores (`wrapper`, `group`, `hero`, `flex_layout`, `grid_layout`).
-- **Editor de Texto Enriquecido:** Se implementó y perfeccionó **TipTap** para que controle nativamente la edición rica (Bold, Italic, Enlaces, etc.).
-  - Se configuró para uso exclusivo en los bloques **"Texto Libre" (`text`)** y **"Párrafo" (`paragraph`)**.
-- **Refactorización del Inspector (`InspectorPanel.tsx`):**
-  - Se unificaron los controles globales de tipografía (fuente, color, tamaño, alineación) para que funcionen armónicamente junto con el texto enriquecido, sin pisarse.
-- **Limpieza de UX en el Canvas:**
-  - Se removió el formato en línea obsoleto (formatRow) de la barra flotante del Canvas.
-  - Se estableció un **Toolbar Flotante Global minimalista** que solo muestra: `[Mover]`, `[Duplicar]` y `[Eliminar]` para **todos** los elementos.
+---
 
-## Fase 4: Librerías Externas y Base de Componentes Avanzados 🔄 (En Progreso)
+## ✅ Fase 1-3: Base del Editor
+
+### Motor de Renderizado (`compiler.ts`)
+- Compilación recursiva para modo **HTML** y **MJML**.
+- Componentes contenedores: `wrapper`, `group`, `hero`, `flex_layout`, `grid_layout`.
+- Compilación de `fontSize` en botones (HTML + MJML), default props, inspector panel, template inicial.
+- Fix: referencia `isText` no definida en inline script de `compiler.ts`.
+
+### Editor de Texto Enriquecido
+- ~~**TipTap**~~ → Reemplazado por **Lexical** (Meta) — solo para bloque `text`.
+- Instalados: `lexical`, `@lexical/react`, `@lexical/rich-text`, `@lexical/list`, `@lexical/link`, `@lexical/html`, `@lexical/history`, `@lexical/selection`, `@lexical/utils`, `@lexical/overflow`.
+- Desinstalados: `@tiptap/react`, `@tiptap/starter-kit`, `@tiptap/extension-link`.
+- Toolbar completo: B/I/U/S, listas ordenadas/no ordenadas, alineación izquierda/centro/derecha, dropdown de Google Fonts, stepper de tamaño de fuente, toggle de link, limpiar formato.
+- `LexicalEditor.tsx` (nuevo) → reemplaza `RichTextEditor.tsx` (eliminado).
+
+### InspectorPanel (`InspectorPanel.tsx`)
+- Bloque `text` → `<LexicalEditor />` (toolbar integrado).
+- Bloque `paragraph` → `<textarea />` simple.
+- Bloque `heading` → `<textarea />` simple.
+- **Controles de fuente redundantes removidos** para bloque `text` (Tipografía, Tamaño de Texto, Estilo/Formato B/I/U, Alineación, Color) — existen solo en el toolbar de Lexical. Se conservan para `heading` y `paragraph`.
+
+### Fix: Cursor atascado en posición 0 (Lexical)
+- Causa raíz: `HtmlPlugin` y `ChangePlugin` usaban refs separados → ciclo de recarga que mataba la selección.
+- Fix: fusionar ambos en un solo `EditorPlugin` con un `lastHtmlRef` compartido, y comparar el HTML actual del editor contra el prop entrante antes de recargar.
+
+### Testing
+- Playwright + Chromium instalado (`@playwright/test`).
+- Test `e2e/lexical-cursor.spec.ts`: selecciona bloque `text` → enfoca editor → escribe → verifica contenido y `focusOffset`.
+- Script: `npm test`.
+
+### Limpieza de UX en el Canvas
+- Toolbar flotante global minimalista: `[Mover]`, `[Duplicar]`, `[Eliminar]` para todos los elementos.
+
+---
+
+## 🔄 Fase 4: Librerías Externas y Base de Componentes Avanzados
 **Objetivo:** Extender los componentes disponibles incorporando librerías externas para visualización compleja.
 
-- [x] Crear el esqueleto HTML para componentes de **Galería** (`gallery`) y **Carrusel/Slider** (`slider`) dentro del compilador.
-- [x] Preparar las propiedades y la estructura de datos para alojar múltiples imágenes en el Inspector.
-- [ ] **Pendiente:** Integrar los scripts e inicialización de la librería **Swiper.js** para darle funcionalidad real a los sliders en las vistas previas.
-- [ ] **Pendiente:** Integrar los scripts de **PhotoSwipe** para los popups de las galerías interactivas.
+- [x] Esqueleto HTML para **Galería** (`gallery`) y **Carrusel/Slider** (`slider`) en el compilador.
+- [x] Preparar propiedades y estructura de datos para múltiples imágenes en el Inspector.
+- [ ] **Pendiente:** Integrar scripts e inicialización de **Swiper.js** para sliders funcionales en preview.
+- [ ] **Pendiente:** Integrar scripts de **PhotoSwipe** para popups de galerías interactivas.
 
-## Fase 5: Importación Avanzada Bidireccional (MJML / HTML) 📅 (Planificada)
-**Objetivo:** Permitir la lectura de código externo (MJML/HTML) y parsearlo dinámicamente de vuelta a los nodos internos (`BlockNode`) para que sean 100% editables mediante el *Drag & Drop*.
+---
 
-- [ ] **Mapeo de Nodos MJML:** Analizar la última versión de MJML y asegurar que cada etiqueta se traduzca correctamente a su contraparte en el Builder.
-- [ ] **Soporte para Tablas:** 
-  - Implementar un elemento `table` simple y nativo para el modo HTML.
-  - Tratar las "tablas anidadas complejas" importadas derivándolas automáticamente a bloques `custom_html` para no quebrar el editor.
-- [ ] **Exportación de Funcionalidad:** Extraer el motor de Importación/Parsing como una función utilitaria exportable (`parseTemplateToNodes`) documentada en `@docs` para integraciones externas fluidas.
-- [ ] **Heurística de Renderizado Editable:** Asegurar que todos los bloques reconstruidos recuperen el atributo de edición (`data-id`, `data-prop`) para continuar construyendo encima.
+## 📅 Fase 5: Importación Avanzada Bidireccional (MJML / HTML)
+**Objetivo:** Parsear código externo (MJML/HTML) de vuelta a nodos internos `BlockNode` para edición vía Drag & Drop.
 
-## Siguientes Pasos Inmediatos
-1. Terminar de inyectar las dependencias de **Swiper.js** y **PhotoSwipe** para completar formalmente la **Fase 4**.
-2. Comenzar la investigación del parser para la importación avanzada de la **Fase 5**.
+- [ ] **Mapeo de Nodos MJML:** Traducir etiquetas MJML a componentes del Builder.
+- [ ] **Soporte para Tablas:** Tabla simple nativa para HTML; tablas complejas → `custom_html`.
+- [ ] **Exportación de Funcionalidad:** `parseTemplateToNodes()` documentada para integraciones externas.
+- [ ] **Heurística de Renderizado Editable:** Atributos `data-id`, `data-prop` en bloques reconstruidos.
+
+---
+
+## Próximos Pasos Inmediatos
+1. Completar inyección de dependencias **Swiper.js** y **PhotoSwipe** (Fase 4).
+2. Investigar parser para importación avanzada (Fase 5).
+3. Sincronizar HTML del Lexical al iframe canvas en vivo.
