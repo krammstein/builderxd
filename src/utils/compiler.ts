@@ -1004,6 +1004,7 @@ ${fontLinks}
 
             // Check if it is a text-editing node
             const id = selected.getAttribute('data-id');
+            const isText = id && (id.startsWith('text-') || id.startsWith('heading') || id.startsWith('paragraph') || id.startsWith('button-'));
             const editableElements = selected.hasAttribute('data-prop') ? [selected] : Array.from(selected.querySelectorAll('[data-prop]'));
             if (isText) {
               editableElements.forEach(target => {
