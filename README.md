@@ -69,6 +69,7 @@ The `BuilderXD` component accepts the following props (`AppProps`):
 | `initialTemplate` | `string` | `undefined` | Initial MJML or HTML string to load into the canvas. |
 | `initialNodes` | `BlockNode[]` | `undefined` | Initial nodes array in JSON format (internal AST). |
 | `fileManager` | `FileManagerProvider` | `undefined` | Custom file manager plugin for image/video uploads. |
+| `fileManagerComponent` | `React.ReactNode` | `undefined` | **Replaces the built-in file manager modal** with a custom one (e.g. EnigmaSuite's FileManagerModal). Receives `onInsert` and `onClose` via `React.cloneElement`. See the [Adapter Pattern](#custom-file-manager-modal-adapter-pattern) section below. |
 | `espIntegration` | `ESPIntegration` | `undefined` | Integration object for Push/Pull templates to/from an ESP. |
 | `uiConfig` | `UIConfig` | `{}` | Fine-grained control over UI element visibility (see table below). |
 | `googleFonts` | `string[]` | `['Roboto', 'Open Sans', ...]` | List of Google Fonts available in the editor dropdowns. |
@@ -100,6 +101,8 @@ You can call these methods using a React ref attached to the `BuilderXD` compone
 | `getMJML()` | `string` | Returns the compiled MJML string. |
 | `importTemplate(code, mode)` | `void` | Parses and loads an MJML or HTML string into the canvas. |
 | `exportTemplate(format)` | `Promise<string>` | Exports the template as `'html'`, `'mjml'`, or `'zip'`. |
+| `getGlobalSettings()` | `GlobalSettings` | Returns the current global settings (title, preview text, fonts, etc.). |
+| `setGlobalSettings(settings)` | `void` | Replaces the global settings and triggers a re-render. |
 
 ## Locking the output mode (`mode` prop)
 
@@ -159,11 +162,43 @@ const savedMjml = await fetch('/api/campaigns/1').then(r => r.text());
 />
 ```
 
+## Custom File Manager Modal (Adapter Pattern)
+
+When you have an existing file manager UI (like EnigmaSuite's `FileManagerModal`), you can plug it into BuilderXD using the `fileManagerComponent` prop. This avoids compatibility issues with the `FileManagerProvider` interface (which expects functional callbacks, not a UI component).
+
+### How it works
+
+1. Wrap your file manager modal so it accepts `{ onInsert: (files: MediaFile[]) => void, onClose: () => void }` props.
+2. Pass it to BuilderXD via `fileManagerComponent`.
+3. When the user clicks a file manager button in the header, your modal opens instead of the built-in one.
+
+```tsx
+// Your adapter component
+function MyFileManagerAdapter({ onInsert, onClose }) {
+  return (
+    <FileManagerModal
+      open={true}
+      onClose={onClose}
+      onInsert={onInsert}
+      bucketId="my-bucket"
+      mediaPath="/templates"
+      pixabayConfigured={true}
+    />
+  );
+}
+
+// Usage
+<BuilderXD fileManagerComponent={<MyFileManagerAdapter />} />
+```
+
+See `examples/FileManagerAdapterExample.tsx` for a complete working example.
+
 ## Examples
 
 We provide ready-to-use examples in the `examples/` directory of the package:
 - **`examples/BasicImplementation.tsx`**: A minimal setup showing how to mount the builder and use the `ref` to save data to your backend.
 - **`examples/AdvancedImplementation.tsx`**: An advanced implementation demonstrating the `mode` prop, `initialTemplate`, a custom `FileManagerProvider`, and a custom save handler.
+- **`examples/FileManagerAdapterExample.tsx`**: Demonstrates the `fileManagerComponent` adapter pattern for integrating custom file manager modals like EnigmaSuite's FileManagerModal.
 
 ## License
 

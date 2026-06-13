@@ -154,6 +154,19 @@ export interface FileManagerProvider {
   onUpload?: (file: any, path?: string) => Promise<any>;
 }
 
+export interface MediaFile {
+  url: string;
+  name?: string;
+  type?: string;
+  content?: string;
+  thumbnailUrl?: string;
+}
+
+export interface FileManagerModalProps {
+  onInsert: (files: MediaFile[]) => void;
+  onClose: () => void;
+}
+
 export interface ESPIntegration {
   id: string;
   name: string;

@@ -5,6 +5,26 @@ Format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 
 ---
 
+## [1.8.0] — 2026-06-13 · unreleased
+
+> **feat: fileManagerComponent adapter slot for custom File Manager modals (EnigmaSuite compatibility)**
+
+### Added
+- **New prop `fileManagerComponent`**: Accepts a `React.ReactNode` that completely replaces the built-in file manager modal. The custom component receives `onInsert: (files: MediaFile[]) => void` and `onClose: () => void` via `React.cloneElement` — same pattern as `assetManagerComponent` and `videoManagerComponent`.
+- **New types**: `MediaFile` and `FileManagerModalProps` exported from `src/types.ts` for type-safe adapter implementations.
+- **New example**: `examples/FileManagerAdapterExample.tsx` — complete working example showing a mock adapter and how to integrate custom modals.
+- **Adapter documentation**: README section "Custom File Manager Modal (Adapter Pattern)" with code samples.
+
+### Changed
+- `App.tsx`: When `fileManagerComponent` is provided, clicking a file manager provider button opens the custom modal instead of the built-in file browser. The native modal remains available when `fileManagerComponent` is not set.
+- `src/types.ts`: Added `MediaFile` and `FileManagerModalProps` interfaces.
+
+### Files Changed
+`src/App.tsx`, `src/types.ts`, `README.md`, `CHANGELOG.md`, `examples/FileManagerAdapterExample.tsx`
+**+120 lines / -2 lines across 5 files**
+
+---
+
 ## [1.7.0] — 2026-06-12 · `d1f0969`
 
 > **feat: inline canvas text editing, select toolbar, margin/padding layout sliders, template modes, and custom file manager**
@@ -309,6 +329,7 @@ Format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 | 1.2.0   | `7c0520d` | 2026-06-12 12:54 | Library mode (ESM/UMD), `vite-plugin-dts`, Imperative API via ref  |
 | 1.1.0   | `1e477c6` | 2026-06-12 12:49 | Full builder UI: 5 panels, 13 blocks, i18n, themes, compiler       |
 | 1.0.0   | `dd6e4a7` | 2026-06-12 12:46 | Project scaffolding, branch flow, docs, mockup preview              |
+| 1.8.0   | `HEAD`    | 2026-06-13       | `fileManagerComponent` adapter slot, MediaFile type, adapter docs  |
 
 ---
 

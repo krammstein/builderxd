@@ -46,6 +46,8 @@ export interface AppProps {
   };
   assetManagerComponent?: React.ReactNode;
   videoManagerComponent?: React.ReactNode;
+  /** Reemplaza el modal de archivos nativo con uno personalizado (ej. EnigmaSuite) */
+  fileManagerComponent?: React.ReactNode;
   googleFonts?: string[];
   ref?: React.Ref<any>;
 }
@@ -203,6 +205,7 @@ const App = forwardRef<BuilderRef, AppProps>((
   uiConfig,
   assetManagerComponent,
   videoManagerComponent,
+  fileManagerComponent,
   googleFonts
 }, ref) => {
   const { t } = useTranslation();
@@ -224,6 +227,10 @@ const App = forwardRef<BuilderRef, AppProps>((
 
   const [isVideoManagerOpen, setIsVideoManagerOpen] = useState(false);
   const [currentVideoCallback, setCurrentVideoCallback] = useState<((url: string) => void) | null>(null);
+
+  // File Manager (custom modal component)
+  const [isFileManagerOpen, setIsFileManagerOpen] = useState(false);
+  const [currentFileManagerCallback, setCurrentFileManagerCallback] = useState<((files: any[]) => void) | null>(null);
 
   // Sync dark mode from SDK prop if provided
   useEffect(() => {
@@ -1015,8 +1022,25 @@ const App = forwardRef<BuilderRef, AppProps>((
         fileManagerProviders={fileManagerProviders}
         espIntegrations={espIntegrations}
         onFileManagerClick={(provider) => {
-          setFileManagerPath('/');
-          setActiveFileManager(provider);
+          if (fileManagerComponent) {
+            setCurrentFileManagerCallback(() => (files: any[]) => {
+              const file = files?.[0];
+              if (!file) return;
+              if (file.content) {
+                try {
+                  const parsed = JSON.parse(file.content);
+                  if (Array.isArray(parsed)) updateNodesAndHistory(parsed);
+                } catch { alert('Formato de plantilla inválido'); }
+              } else if (file.url) {
+                if (currentAssetCallback) currentAssetCallback(file.url);
+              }
+              setIsFileManagerOpen(false);
+            });
+            setIsFileManagerOpen(true);
+          } else {
+            setFileManagerPath('/');
+            setActiveFileManager(provider);
+          }
         }}
         onESPClick={(integration) => {
           setEspSuccessMsg('');
@@ -1164,6 +1188,35 @@ const App = forwardRef<BuilderRef, AppProps>((
                 })
               ) : (
                 videoManagerComponent
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom File Manager Modal (e.g. EnigmaSuite adapter) */}
+      {isFileManagerOpen && fileManagerComponent && (
+        <div className="modal-overlay z-50">
+          <div className="modal-content max-w-4xl w-full bg-bg-panel border border-border-color rounded-lg p-5">
+            <div className="flex justify-between items-center border-b border-border-color pb-3 mb-4">
+              <h3 className="text-sm font-bold text-text-primary">Gestor de Archivos</h3>
+              <button
+                onClick={() => setIsFileManagerOpen(false)}
+                className="bg-transparent border-none text-text-muted hover:text-text-primary cursor-pointer text-lg font-bold"
+              >
+                &times;
+              </button>
+            </div>
+            <div className="modal-body">
+              {React.isValidElement(fileManagerComponent) ? (
+                React.cloneElement(fileManagerComponent as React.ReactElement<any>, {
+                  onInsert: (files: any[]) => {
+                    if (currentFileManagerCallback) currentFileManagerCallback(files);
+                  },
+                  onClose: () => setIsFileManagerOpen(false)
+                })
+              ) : (
+                fileManagerComponent
               )}
             </div>
           </div>
