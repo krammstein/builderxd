@@ -15,26 +15,8 @@ BuilderXD is a powerful, modern, and open-source visual drag-and-drop email buil
 
 ## Installation
 
-### Desde npm registry (público) — próximamente
 ```bash
 npm install builderxd react react-dom
-```
-
-### Desde GitHub Packages
-```bash
-# 1. Configurar GitHub Packages como registro (una sola vez)
-echo "@krammstein:registry=https://npm.pkg.github.com/" >> .npmrc
-
-# 2. Autenticarse (reemplaza TOKEN con un token de GitHub con scope read:packages)
-echo "//npm.pkg.github.com/:_authToken=TOKEN" >> .npmrc
-
-# 3. Instalar
-npm install @krammstein/builderxd react react-dom
-```
-
-### Desde GitHub directamente
-```bash
-npm install git+https://github.com/krammstein/builderxd.git
 ```
 
 ## Quick Start
