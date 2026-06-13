@@ -39,7 +39,7 @@ Este documento refleja el estado actual de la refactorización y desarrollo de f
 
 ---
 
-## 🔄 Fase 4: Librerías Externas y Base de Componentes Avanzados
+## 🔄 Fase 4: Librerías Externas y Base de Componentes Avanzados (Postergado a v1.1+)
 **Objetivo:** Extender los componentes disponibles incorporando librerías externas para visualización compleja.
 
 - [x] Esqueleto HTML para **Galería** (`gallery`) y **Carrusel/Slider** (`slider`) en el compilador.
@@ -49,7 +49,7 @@ Este documento refleja el estado actual de la refactorización y desarrollo de f
 
 ---
 
-## 📅 Fase 5: Importación Avanzada Bidireccional (MJML / HTML)
+## 📅 Fase 5: Importación Avanzada Bidireccional (Postergado a v1.1+)
 **Objetivo:** Parsear código externo (MJML/HTML) de vuelta a nodos internos `BlockNode` para edición vía Drag & Drop.
 
 - [ ] **Mapeo de Nodos MJML:** Traducir etiquetas MJML a componentes del Builder.
@@ -59,7 +59,7 @@ Este documento refleja el estado actual de la refactorización y desarrollo de f
 
 ---
 
-## Próximos Pasos Inmediatos
+## Próximos Pasos (Post v1.0.0)
 1. Completar inyección de dependencias **Swiper.js** y **PhotoSwipe** (Fase 4).
 2. Investigar parser para importación avanzada (Fase 5).
-3. Sincronizar HTML del Lexical al iframe canvas en vivo.
+3. Sincronizar HTML del Lexical al iframe canvas en vivo (Refinamientos del editor).
