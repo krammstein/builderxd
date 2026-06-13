@@ -17,6 +17,8 @@ export interface AppProps {
   onSave?: (data: { nodes: BlockNode[]; mjml: string; html: string }) => void;
   onExport?: (data: { nodes: BlockNode[]; mjml: string; html: string }) => void;
   onTemplateChange?: (mjml: string, html: string) => void;
+  /** When defined, locks the editor to this mode and hides the HTML/MJML switcher */
+  mode?: 'mjml' | 'html';
   defaultMode?: 'mjml' | 'html';
   readOnly?: boolean;
   uiConfig?: {
@@ -184,11 +186,13 @@ const INITIAL_TEMPLATE: BlockNode[] = [
   }
 ];
 
-const App = forwardRef<BuilderRef, AppProps>(({
+const App = forwardRef<BuilderRef, AppProps>((
+{
   initialNodes = [],
   onSave,
   onExport,
   onTemplateChange,
+  mode,
   defaultMode = 'mjml',
   readOnly = false,
   theme,
@@ -210,7 +214,9 @@ const App = forwardRef<BuilderRef, AppProps>(({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [deviceMode, setDeviceMode] = useState<DeviceMode>('desktop');
   const [isCodeDrawerOpen, setIsCodeDrawerOpen] = useState(false);
-  const [templateMode, setTemplateMode] = useState<TemplateMode>(defaultMode);
+  const [templateMode, setTemplateModeState] = useState<TemplateMode>(mode ?? defaultMode);
+  // When the `mode` prop is set externally, the setter is a no-op to keep it locked
+  const setTemplateMode = mode ? (_: TemplateMode) => {} : setTemplateModeState;
   const [isAssetManagerOpen, setIsAssetManagerOpen] = useState(false);
   const [currentAssetCallback, setCurrentAssetCallback] = useState<((url: string) => void) | null>(null);
 
@@ -1031,6 +1037,7 @@ const App = forwardRef<BuilderRef, AppProps>(({
           readOnly={readOnly}
           templateMode={templateMode}
           setTemplateMode={setTemplateMode}
+          fixedMode={mode}
           onClearCanvas={handleClearCanvas}
           uiConfig={uiConfig}
         />

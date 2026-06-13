@@ -13,6 +13,8 @@ interface LeftPanelProps {
   readOnly?: boolean;
   templateMode?: TemplateMode;
   setTemplateMode?: (mode: TemplateMode) => void;
+  /** When defined externally via the `mode` prop, the switcher is hidden */
+  fixedMode?: 'mjml' | 'html';
   onClearCanvas?: () => void;
   uiConfig?: UIConfig;
 }
@@ -27,6 +29,7 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
   readOnly = false,
   templateMode = 'mjml',
   setTemplateMode,
+  fixedMode,
   onClearCanvas,
   uiConfig
 }) => {
@@ -179,7 +182,7 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
                 )}
               </div>
 
-              {uiConfig?.showTemplateModeToggle !== false && setTemplateMode && (
+              {uiConfig?.showTemplateModeToggle !== false && !fixedMode && setTemplateMode && (
                 <div className="flex bg-bg-hover p-1 rounded-md border border-border-color/80 w-full shrink-0 select-none">
                   <button
                     onClick={() => setTemplateMode('html')}

@@ -95,6 +95,7 @@ export default function AdvancedImplementation() {
         <BuilderXD 
           ref={builderRef} 
           initialTemplate={myExistingTemplate}
+          mode="mjml"           {/* Locks editor to MJML mode and hides the HTML/MJML switcher */}
           fileManager={myFileManager}
           uiConfig={myUIConfig}
         />
