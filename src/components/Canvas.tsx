@@ -10,6 +10,7 @@ interface CanvasProps {
   onCloneNode?: (id: string) => void;
   onUpdateNodeContent?: (id: string, content: string, propName?: string) => void;
   onUpdateNodeProperties?: (id: string, properties: Record<string, any>) => void;
+  onDoubleClickImage?: (id: string) => void;
 }
 
 export const Canvas: React.FC<CanvasProps> = ({
@@ -20,7 +21,8 @@ export const Canvas: React.FC<CanvasProps> = ({
   onDeleteNode,
   onCloneNode,
   onUpdateNodeContent,
-  onUpdateNodeProperties
+  onUpdateNodeProperties,
+  onDoubleClickImage
 }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const lastHtmlRef = useRef<string>('');
@@ -41,6 +43,8 @@ export const Canvas: React.FC<CanvasProps> = ({
           onUpdateNodeContent?.(event.data.id, event.data.content, event.data.propName);
         } else if (event.data.type === 'UPDATE_PROPERTIES') {
           onUpdateNodeProperties?.(event.data.id, event.data.properties);
+        } else if (event.data.type === 'DOUBLE_CLICK_IMAGE') {
+          onDoubleClickImage?.(event.data.id);
         }
       }
     };
@@ -49,7 +53,7 @@ export const Canvas: React.FC<CanvasProps> = ({
     return () => {
       window.removeEventListener('message', handleIframeMessage);
     };
-  }, [onSelectNode, onDropElement, onDeleteNode, onCloneNode, onUpdateNodeContent, onUpdateNodeProperties]);
+  }, [onSelectNode, onDropElement, onDeleteNode, onCloneNode, onUpdateNodeContent, onUpdateNodeProperties, onDoubleClickImage]);
 
   // Apply DOM patching or reload srcdoc programmatically
   useEffect(() => {

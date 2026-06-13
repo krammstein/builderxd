@@ -31,6 +31,7 @@ export interface AppProps {
   assetManagerComponent?: React.ReactNode;
   confirmClearPrompt?: string;
   googleFonts?: string[];
+  videoManagerComponent?: React.ReactNode;
 }
 
 
@@ -196,10 +197,13 @@ const App = forwardRef<any, AppProps>(({
   const [nodes, setNodes] = useState<BlockNode[]>(getInitialNodes);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [deviceMode, setDeviceMode] = useState<DeviceMode>(responsive || 'desktop');
-  const [isCodeDrawerOpen, setIsCodeDrawerOpen] = useState(true);
+  const [isCodeDrawerOpen, setIsCodeDrawerOpen] = useState(false);
   const [templateMode, setTemplateMode] = useState<TemplateMode>('mjml');
   const [isAssetManagerOpen, setIsAssetManagerOpen] = useState(false);
   const [currentAssetCallback, setCurrentAssetCallback] = useState<((url: string) => void) | null>(null);
+
+  const [isVideoManagerOpen, setIsVideoManagerOpen] = useState(false);
+  const [currentVideoCallback, setCurrentVideoCallback] = useState<((url: string) => void) | null>(null);
 
   // Sync dark mode from SDK prop if provided
   useEffect(() => {
@@ -984,6 +988,17 @@ const App = forwardRef<any, AppProps>(({
             onCloneNode={handleCloneNode}
             onUpdateNodeContent={handleUpdateNodeContent}
             onUpdateNodeProperties={(id, props) => handleUpdateProperties(id, props, false)}
+            onDoubleClickImage={(id) => {
+              if (assetManagerComponent) {
+                setCurrentAssetCallback(() => (url: string) => handleUpdateProperties(id, { url }, false));
+                setIsAssetManagerOpen(true);
+              } else if (fileManagerProviders.length > 0) {
+                setFileManagerPath('/');
+                setActiveFileManager(fileManagerProviders[0]);
+              } else {
+                alert('No hay un gestor de archivos configurado.');
+              }
+            }}
           />
         </div>
 
@@ -1003,6 +1018,14 @@ const App = forwardRef<any, AppProps>(({
               setActiveFileManager(fileManagerProviders[0]);
             } else {
               alert('No hay un gestor de archivos configurado.');
+            }
+          }}
+          onOpenVideoManager={(_currentUrl, onSelect) => {
+            if (videoManagerComponent) {
+              setCurrentVideoCallback(() => onSelect);
+              setIsVideoManagerOpen(true);
+            } else {
+              alert('No hay un gestor de videos configurado.');
             }
           }}
         />
@@ -1042,6 +1065,38 @@ const App = forwardRef<any, AppProps>(({
                 })
               ) : (
                 assetManagerComponent
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Video Manager Modal */}
+      {isVideoManagerOpen && videoManagerComponent && (
+        <div className="modal-overlay z-50">
+          <div className="modal-content max-w-lg w-full bg-bg-panel border border-border-color rounded-lg p-5">
+            <div className="flex justify-between items-center border-b border-border-color pb-3 mb-4">
+              <h3 className="text-sm font-bold text-text-primary">Gestor de Videos</h3>
+              <button 
+                onClick={() => setIsVideoManagerOpen(false)} 
+                className="bg-transparent border-none text-text-muted hover:text-text-primary cursor-pointer text-lg font-bold"
+              >
+                &times;
+              </button>
+            </div>
+            <div className="modal-body">
+              {React.isValidElement(videoManagerComponent) ? (
+                React.cloneElement(videoManagerComponent as React.ReactElement<any>, {
+                  onSelect: (url: string) => {
+                    if (currentVideoCallback) {
+                      currentVideoCallback(url);
+                    }
+                    setIsVideoManagerOpen(false);
+                  },
+                  onClose: () => setIsVideoManagerOpen(false)
+                })
+              ) : (
+                videoManagerComponent
               )}
             </div>
           </div>

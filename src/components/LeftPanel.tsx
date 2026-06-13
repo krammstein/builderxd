@@ -26,6 +26,7 @@ import {
   User,
   ShoppingBag
 } from 'lucide-react';
+import { componentRegistry } from './ComponentRegistry';
 
 interface LeftPanelProps {
   onAddComponent: (type: BlockType) => void;
@@ -58,34 +59,8 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [collapsedLayers, setCollapsedLayers] = useState<Record<string, boolean>>({});
 
-  const availableComponents = [
-    { type: 'section' as BlockType, label: 'Sección', icon: <Layout size={24} /> },
-    { type: 'column' as BlockType, label: 'Columna', icon: <Columns size={24} /> },
-    { type: 'heading' as BlockType, label: 'Título', icon: <Type size={24} /> },
-    { type: 'paragraph' as BlockType, label: 'Párrafo', icon: <FileText size={24} /> },
-    { type: 'text' as BlockType, label: 'Texto Libre', icon: <Type size={24} /> },
-    { type: 'image' as BlockType, label: 'Imagen', icon: <Image size={24} /> },
-    { type: 'button' as BlockType, label: 'Botón', icon: <Square size={24} /> },
-    { type: 'divider' as BlockType, label: 'Divisor', icon: <Minus size={24} /> },
-    { type: 'spacer' as BlockType, label: 'Espaciador', icon: <MoveVertical size={24} /> },
-    { type: 'social' as BlockType, label: 'Redes', icon: <Share2 size={24} /> },
-    { type: 'video' as BlockType, label: 'Vídeo', icon: <Video size={24} /> },
-    { type: 'custom_html' as BlockType, label: 'HTML', icon: <Code size={24} /> },
-    { type: 'countdown' as BlockType, label: 'Contador', icon: <Clock size={24} /> },
-    { type: 'accordion' as BlockType, label: 'Acordeón', icon: <Menu size={24} /> },
-    { type: 'carousel' as BlockType, label: 'Carrusel', icon: <Images size={24} /> },
-    { type: 'icon' as BlockType, label: 'Icono', icon: <Star size={24} /> },
-    { type: 'nav_menu' as BlockType, label: 'Menú Nav', icon: <Menu size={24} /> },
-    { type: 'image_text' as BlockType, label: 'Img + Texto', icon: <FileText size={24} /> },
-    { type: 'product_card' as BlockType, label: 'Producto', icon: <ShoppingBag size={24} /> },
-    { type: 'quote' as BlockType, label: 'Cita', icon: <User size={24} /> }
-  ];
-
-  // Define components that are only valid in MJML template mode
-  const mjmlOnlyTypes: BlockType[] = ['section', 'column', 'accordion', 'carousel', 'countdown'];
-
-  const filteredComponents = availableComponents.filter((comp) => {
-    if (templateMode === 'html' && mjmlOnlyTypes.includes(comp.type)) {
+  const filteredComponents = componentRegistry.filter((comp) => {
+    if (!comp.allowedModes.includes(templateMode)) {
       return false;
     }
     return (
@@ -102,7 +77,7 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
     const isSelected = node.id === selectedId;
     const hasChildren = node.children && node.children.length > 0;
     const isCollapsed = collapsedLayers[node.id];
-    const displayName = availableComponents.find((c) => c.type === node.type)?.label || node.type;
+    const displayName = componentRegistry.find((c) => c.type === node.type)?.label || node.type;
 
     return (
       <div key={node.id} className="flex flex-col">
@@ -128,7 +103,7 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
             </button>
           )}
           <span className={`mr-2 flex items-center shrink-0 ${isSelected ? 'text-primary' : 'text-text-muted'}`}>
-            {React.cloneElement(availableComponents.find((c) => c.type === node.type)?.icon || <Layout size={14} />, { size: 14 })}
+            {React.cloneElement(componentRegistry.find((c) => c.type === node.type)?.icon as React.ReactElement || <Layout size={14} />, { size: 14 })}
           </span>
           <span className="text-xs font-medium truncate flex-1">{displayName}</span>
 

@@ -116,13 +116,20 @@ export const compileToMJML = (nodes: BlockNode[]): string => {
         return `${indent}<mj-spacer${height} />\n`;
       }
       case 'social': {
-        const align = styleAttr('align', 'align');
-        const pad = styleAttr('padding', 'padding');
-        return `${indent}<mj-social${align}${pad}>
-${indent}  <mj-social-element name="facebook" href="#" />
-${indent}  <mj-social-element name="twitter" href="#" />
-${indent}  <mj-social-element name="instagram" href="#" />
-${indent}</mj-social>\n`;
+        const align = props.align ? ` align="${props.align}"` : '';
+        const pad = props.padding ? ` padding="${props.padding}"` : '';
+        const networks = props.networks || [
+          { id: 'facebook', name: 'facebook', href: 'https://facebook.com', enabled: true },
+          { id: 'twitter', name: 'twitter', href: 'https://twitter.com', enabled: true },
+          { id: 'instagram', name: 'instagram', href: 'https://instagram.com', enabled: true }
+        ];
+        let socialElements = '';
+        networks.forEach((net: any) => {
+          if (net.enabled) {
+            socialElements += `${indent}  <mj-social-element name="${net.name}" href="${net.href}" />\n`;
+          }
+        });
+        return `${indent}<mj-social${align}${pad}>\n${socialElements}${indent}</mj-social>\n`;
       }
       case 'video': {
         const src = props.thumbnailUrl ? ` src="${props.thumbnailUrl}"` : ' src="https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800&auto=format&fit=crop&q=60"';
@@ -203,7 +210,7 @@ ${indent}</mj-accordion>\n`;
 ${indent}  <mj-column>
 ${indent}    <mj-image src="${imgUrl}" width="150px" />
 ${indent}    <mj-text align="center" font-size="16px" font-weight="bold">${title}</mj-text>
-${indent}    <mj-text align="center" font-size="14px" color="#666666">${price}</mj-text>
+${indent}    <mj-text align="center" font-size="14px" color="${color}">${price}</mj-text>
 ${indent}    <mj-button href="${btnUrl}" background-color="${color}">${btnText}</mj-button>
 ${indent}  </mj-column>
 ${indent}</mj-section>\n`;
@@ -255,13 +262,16 @@ export const compileToHTML = (
 
   const renderNode = (node: BlockNode): string => {
     const isSelectedClass = node.id === selectedId ? ' builder-element-selected' : '';
+    const p = node.properties;
+    const attr = `data-id="${node.id}" class="builder-element${isSelectedClass}"`;
+    const indent = '          ';
 
     switch (node.type) {
       case 'section': {
         const bg = getResponsiveStyle(node, 'backgroundColor', 'transparent');
         const padding = getResponsiveStyle(node, 'padding', '20px 0px');
         return `
-          <table data-id="${node.id}" class="builder-element${isSelectedClass}" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: ${bg}; padding: ${padding}; box-sizing: border-box;">
+          <table ${attr} border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: ${bg}; padding: ${padding}; box-sizing: border-box;">
             <tr>
               <td align="center" style="font-size: 0;">
                 <!--[if mso]>
@@ -290,7 +300,7 @@ export const compileToHTML = (
         const width = getResponsiveStyle(node, 'width', '100%');
         const padding = getResponsiveStyle(node, 'padding', '10px');
         return `
-          <div data-id="${node.id}" class="builder-element${isSelectedClass}" style="flex: 1; min-width: ${isMobile ? '100%' : '0'}; width: ${isMobile ? '100%' : width}; padding: ${padding}; box-sizing: border-box;">
+          <div ${attr} style="flex: 1; min-width: ${isMobile ? '100%' : '0'}; width: ${isMobile ? '100%' : width}; padding: ${padding}; box-sizing: border-box;">
             ${node.children ? node.children.map(renderNode).join('') : ''}
           </div>
         `;
@@ -308,9 +318,9 @@ export const compileToHTML = (
         const fontWeight = getResponsiveStyle(node, 'fontWeight', node.type.startsWith('heading') ? 'bold' : 'normal');
         const fontStyle = getResponsiveStyle(node, 'fontStyle', 'normal');
         const textDecoration = getResponsiveStyle(node, 'textDecoration', 'none');
-        const content = node.properties.content || 'Escribe aquí tu texto...';
+        const content = p.content || 'Escribe aquí tu texto...';
         return `
-          <div data-id="${node.id}" class="builder-element${isSelectedClass}" data-prop="content" style="color: ${color}; font-size: ${fontSize}; text-align: ${align}; padding: ${padding}; margin: ${margin}; border-radius: ${borderRadius}; line-height: 1.5; font-family: ${font}; font-weight: ${fontWeight}; font-style: ${fontStyle}; text-decoration: ${textDecoration}; box-sizing: border-box;">
+          <div ${attr} data-prop="content" style="color: ${color}; font-size: ${fontSize}; text-align: ${align}; padding: ${padding}; margin: ${margin}; border-radius: ${borderRadius}; line-height: 1.5; font-family: ${font}; font-weight: ${fontWeight}; font-style: ${fontStyle}; text-decoration: ${textDecoration}; box-sizing: border-box;">
             ${content}
           </div>
         `;
@@ -322,7 +332,7 @@ export const compileToHTML = (
         const padding = getResponsiveStyle(node, 'padding', '10px 20px');
         const borderRadius = formatRadius(getResponsiveStyle(node, 'borderRadius', '8px'));
         return `
-          <div data-id="${node.id}" class="builder-element${isSelectedClass}" style="text-align: ${align}; padding: ${padding}; box-sizing: border-box;">
+          <div ${attr} style="text-align: ${align}; padding: ${padding}; box-sizing: border-box;">
             <img src="${url}" alt="${alt}" style="max-width: 100%; height: auto; border-radius: ${borderRadius}; display: inline-block; vertical-align: middle;" />
           </div>
         `;
@@ -335,10 +345,10 @@ export const compileToHTML = (
         const padding = getResponsiveStyle(node, 'padding', '12px 24px');
         const align = getResponsiveStyle(node, 'align', 'center');
         const fontSize = getResponsiveStyle(node, 'fontSize', '16px');
-        const content = node.properties.content || 'Haga clic aquí';
-        const url = node.properties.url || '#';
+        const content = p.content || 'Haga clic aquí';
+        const url = p.url || '#';
         return `
-          <div data-id="${node.id}" class="builder-element${isSelectedClass}" style="text-align: ${align}; padding: 10px 20px; box-sizing: border-box;">
+          <div ${attr} style="text-align: ${align}; padding: 10px 20px; box-sizing: border-box;">
             <a href="${url}" style="background-color: ${bg}; color: ${color}; border-radius: ${radius}; padding: ${padding}; display: inline-block; text-decoration: none; font-weight: 500; font-family: ${font}; font-size: ${fontSize};" target="_blank">
               <span data-prop="content">${content}</span>
             </a>
@@ -350,7 +360,7 @@ export const compileToHTML = (
         const thickness = getResponsiveStyle(node, 'thickness', '2px');
         const padding = getResponsiveStyle(node, 'padding', '15px 20px');
         return `
-          <div data-id="${node.id}" class="builder-element${isSelectedClass}" style="padding: ${padding}; box-sizing: border-box;">
+          <div ${attr} style="padding: ${padding}; box-sizing: border-box;">
             <hr style="border: none; border-top: ${thickness} solid ${color}; margin: 0; padding: 0;" />
           </div>
         `;
@@ -358,38 +368,42 @@ export const compileToHTML = (
       case 'spacer': {
         const height = getResponsiveStyle(node, 'height', '30px');
         return `
-          <div data-id="${node.id}" class="builder-element${isSelectedClass}" style="height: ${height}; min-height: ${height}; font-size: 0; line-height: 0; box-sizing: border-box;">
+          <div ${attr} style="height: ${height}; min-height: ${height}; font-size: 0; line-height: 0; box-sizing: border-box;">
             &nbsp;
           </div>
         `;
       }
       case 'social': {
-        const align = getResponsiveStyle(node, 'align', 'center');
-        const padding = getResponsiveStyle(node, 'padding', '15px 20px');
+        const padding = p.padding ? `padding: ${p.padding};` : 'padding: 15px 20px;';
+        const align = p.align || 'center';
+        const networks = p.networks || [
+          { id: 'facebook', name: 'facebook', href: 'https://facebook.com', enabled: true },
+          { id: 'twitter', name: 'twitter', href: 'https://twitter.com', enabled: true },
+          { id: 'instagram', name: 'instagram', href: 'https://instagram.com', enabled: true }
+        ];
+
+        let socialElements = '';
+        networks.forEach((net: any) => {
+          if (net.enabled) {
+            socialElements += `<a href="${net.href}" style="display:inline-block; margin: 0 4px; text-decoration: none;"><div style="width:24px; height:24px; background:#4b5563; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; color:white; font-size:10px;">${net.name.substring(0, 1).toUpperCase()}</div></a>`;
+          }
+        });
+
         return `
-          <div data-id="${node.id}" class="builder-element${isSelectedClass}" style="text-align: ${align}; padding: ${padding}; box-sizing: border-box;">
-            <table align="${align}" border="0" cellpadding="0" cellspacing="0" style="display: inline-block; border-collapse: collapse;">
-              <tr>
-                <td style="padding: 0 8px;">
-                  <a href="#" style="display: inline-block; width: 32px; height: 32px; border-radius: 50%; background-color: #3b5998; color: white; text-align: center; line-height: 32px; font-weight: bold; font-family: sans-serif; text-decoration: none;">f</a>
-                </td>
-                <td style="padding: 0 8px;">
-                  <a href="#" style="display: inline-block; width: 32px; height: 32px; border-radius: 50%; background-color: #1da1f2; color: white; text-align: center; line-height: 32px; font-weight: bold; font-family: sans-serif; text-decoration: none;">t</a>
-                </td>
-                <td style="padding: 0 8px;">
-                  <a href="#" style="display: inline-block; width: 32px; height: 32px; border-radius: 50%; background-color: #e1306c; color: white; text-align: center; line-height: 32px; font-weight: bold; font-family: sans-serif; text-decoration: none;">i</a>
-                </td>
-              </tr>
-            </table>
-          </div>
-        `;
+${indent}<table border="0" cellpadding="0" cellspacing="0" width="100%">
+${indent}  <tr>
+${indent}    <td style="${padding} text-align: ${align}; cursor: pointer;" ${attr}>
+${indent}      ${socialElements}
+${indent}    </td>
+${indent}  </tr>
+${indent}</table>`;
       }
       case 'video': {
         const url = getResponsiveStyle(node, 'thumbnailUrl', 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800&auto=format&fit=crop&q=60');
         const align = getResponsiveStyle(node, 'align', 'center');
         const padding = getResponsiveStyle(node, 'padding', '10px 20px');
         return `
-          <div data-id="${node.id}" class="builder-element${isSelectedClass}" style="text-align: ${align}; padding: ${padding}; box-sizing: border-box;">
+          <div ${attr} style="text-align: ${align}; padding: ${padding}; box-sizing: border-box;">
             <div style="position: relative; display: inline-block; cursor: pointer; max-width: 100%;">
               <img src="${url}" style="max-width: 100%; height: auto; border-radius: 8px; display: block;" />
               <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 64px; height: 64px; background: rgba(0,0,0,0.7); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white;">
@@ -740,15 +754,28 @@ ${fontLinks}
           }
         }, true);
 
+        // Double click on images
+        document.body.addEventListener('dblclick', function(e) {
+          const el = e.target.closest('[data-id]');
+          if (el) {
+            const id = el.getAttribute('data-id');
+            if (id && id.startsWith('image-')) {
+              window.parent.postMessage({
+                type: 'DOUBLE_CLICK_IMAGE',
+                id: id
+              }, '*');
+            }
+          }
+        }, true);
+
         // Manage floating toolbar and inline editing
         const updateToolbar = () => {
           let toolbar = document.getElementById('builder-inline-toolbar');
           if (!toolbar) {
             toolbar = document.createElement('div');
             toolbar.id = 'builder-inline-toolbar';
-            toolbar.style.cssText = 'position: absolute; display: none; background: #1f2937; color: white; flex-direction: column; gap: 4px; padding: 4px; border-radius: 6px; z-index: 99999; font-size: 11px; font-family: system-ui, sans-serif; pointer-events: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.25); border: 1px solid #374151;';
+            toolbar.style.cssText = 'position: absolute; display: none; background: #1f2937; color: white; flex-direction: row; gap: 4px; padding: 4px; border-radius: 6px; z-index: 99999; font-size: 11px; font-family: system-ui, sans-serif; pointer-events: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.25); border: 1px solid #374151; align-items: center;';
             toolbar.innerHTML = 
-              '<div class="tb-row" style="display:flex; align-items:center; gap:4px; padding: 2px;">' +
               '  <div id="tb-drag" class="tb-icon-btn" style="cursor: move;" title="Mover">' +
               '    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>' +
               '  </div>' +
@@ -757,8 +784,7 @@ ${fontLinks}
               '  </button>' +
               '  <button id="tb-delete" type="button" class="tb-icon-btn" id="tb-delete" style="color: #ef4444;" title="Eliminar">' +
               '    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>' +
-              '  </button>' +
-              '</div>';
+              '  </button>';
             document.body.appendChild(toolbar);
 
             // Style hover transitions
@@ -829,15 +855,16 @@ ${fontLinks}
               });
 
               const isButton = id && id.startsWith('button-');
+              const isTextFree = id && id.startsWith('text-');
 
-              if (!formatRow && !isButton) {
+              if (!formatRow && !isButton && !isTextFree) {
                 formatRow = document.createElement('div');
                 formatRow.id = 'tb-format-row';
-                formatRow.style.cssText = 'display: flex; gap: 4px; border-top: 1px solid #374151; padding-top: 4px; margin-top: 2px; align-items: center;';
+                formatRow.style.cssText = 'display: flex; gap: 4px; align-items: center; border-left: 1px solid #374151; padding-left: 4px; margin-left: 2px;';
                 toolbar.appendChild(formatRow);
               }
 
-              if (!isButton) {
+              if (!isButton && !isTextFree) {
                 // Apply styles to the focused editable element, or the first one
                 let activeTarget = editableElements[0];
                 const activeEl = document.activeElement;

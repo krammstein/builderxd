@@ -1,4 +1,7 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useEffect } from 'react';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Link from '@tiptap/extension-link';
 
 interface RichTextEditorProps {
   value: string;
@@ -11,42 +14,50 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   onChange,
   disabled = false,
 }) => {
-  const editorRef = useRef<HTMLDivElement>(null);
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Link.configure({
+        openOnClick: false,
+      }),
+    ],
+    content: value,
+    editable: !disabled,
+    onUpdate: ({ editor }) => {
+      onChange(editor.getHTML());
+    },
+  });
 
-  // Keep editor content in sync with value prop, but only if it's different from current innerHTML
   useEffect(() => {
-    if (editorRef.current && editorRef.current.innerHTML !== value) {
-      try {
-        editorRef.current.innerHTML = value;
-      } catch (e) {
-        console.warn('RichTextEditor: innerHTML set failed', e);
-      }
+    if (editor && editor.getHTML() !== value) {
+      editor.commands.setContent(value, false);
     }
-  }, [value]);
+  }, [value, editor]);
 
-  const executeCommand = (command: string, arg: string = '') => {
-    try {
-      document.execCommand(command, false, arg);
-    } catch (e) {
-      console.warn('RichTextEditor: execCommand failed', command, e);
+  useEffect(() => {
+    if (editor) {
+      editor.setEditable(!disabled);
     }
-    triggerChange();
-  };
+  }, [disabled, editor]);
 
-  const triggerChange = () => {
-    if (editorRef.current) {
-      onChange(editorRef.current.innerHTML);
+  if (!editor) {
+    return null;
+  }
+
+  const setLink = () => {
+    const previousUrl = editor.getAttributes('link').href;
+    const url = window.prompt('URL', previousUrl);
+
+    if (url === null) {
+      return;
     }
-  };
 
-  const handleInput = () => {
-    triggerChange();
-  };
+    if (url === '') {
+      editor.chain().focus().extendMarkRange('link').unsetLink().run();
+      return;
+    }
 
-  const handlePaste = (e: React.ClipboardEvent) => {
-    e.preventDefault();
-    const text = e.clipboardData.getData('text/plain');
-    document.execCommand('insertText', false, text);
+    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
   };
 
   return (
@@ -55,36 +66,33 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
       <div className="flex flex-wrap items-center gap-1 p-1.5 border-b border-border-color bg-bg-hover">
         <button
           type="button"
-          onClick={() => executeCommand('bold')}
+          onClick={() => editor.chain().focus().toggleBold().run()}
           disabled={disabled}
-          className="p-1 rounded-md text-text-secondary hover:text-text-primary hover:bg-bg-panel disabled:opacity-40 transition-all font-bold text-xs min-w-[24px] h-[24px] flex items-center justify-center cursor-pointer"
+          className={`p-1 rounded-md hover:text-text-primary hover:bg-bg-panel disabled:opacity-40 transition-all font-bold text-xs min-w-[24px] h-[24px] flex items-center justify-center cursor-pointer ${
+            editor.isActive('bold') ? 'bg-bg-panel text-primary' : 'text-text-secondary'
+          }`}
           title="Negrita"
         >
           B
         </button>
         <button
           type="button"
-          onClick={() => executeCommand('italic')}
+          onClick={() => editor.chain().focus().toggleItalic().run()}
           disabled={disabled}
-          className="p-1 rounded-md text-text-secondary hover:text-text-primary hover:bg-bg-panel disabled:opacity-40 transition-all italic text-xs min-w-[24px] h-[24px] flex items-center justify-center cursor-pointer"
+          className={`p-1 rounded-md hover:text-text-primary hover:bg-bg-panel disabled:opacity-40 transition-all italic text-xs min-w-[24px] h-[24px] flex items-center justify-center cursor-pointer ${
+            editor.isActive('italic') ? 'bg-bg-panel text-primary' : 'text-text-secondary'
+          }`}
           title="Cursiva"
         >
           I
         </button>
         <button
           type="button"
-          onClick={() => executeCommand('underline')}
+          onClick={() => editor.chain().focus().toggleStrike().run()}
           disabled={disabled}
-          className="p-1 rounded-md text-text-secondary hover:text-text-primary hover:bg-bg-panel disabled:opacity-40 transition-all underline text-xs min-w-[24px] h-[24px] flex items-center justify-center cursor-pointer"
-          title="Subrayado"
-        >
-          U
-        </button>
-        <button
-          type="button"
-          onClick={() => executeCommand('strikeThrough')}
-          disabled={disabled}
-          className="p-1 rounded-md text-text-secondary hover:text-text-primary hover:bg-bg-panel disabled:opacity-40 transition-all line-through text-xs min-w-[24px] h-[24px] flex items-center justify-center cursor-pointer"
+          className={`p-1 rounded-md hover:text-text-primary hover:bg-bg-panel disabled:opacity-40 transition-all line-through text-xs min-w-[24px] h-[24px] flex items-center justify-center cursor-pointer ${
+            editor.isActive('strike') ? 'bg-bg-panel text-primary' : 'text-text-secondary'
+          }`}
           title="Tachado"
         >
           S
@@ -92,41 +100,49 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
         <span className="w-px h-4 bg-border-color mx-1" />
 
-        {/* Text Color Selection */}
-        <input
-          type="color"
-          onChange={(e) => executeCommand('foreColor', e.target.value)}
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
           disabled={disabled}
-          className="w-5 h-5 p-0 border border-border-color rounded-sm cursor-pointer bg-transparent"
-          title="Color de texto"
-        />
-
-        {/* Highlight Color Selection */}
-        <input
-          type="color"
-          onChange={(e) => executeCommand('hiliteColor', e.target.value)}
+          className={`p-1 rounded-md hover:text-text-primary hover:bg-bg-panel disabled:opacity-40 transition-all font-bold text-xs min-w-[24px] h-[24px] flex items-center justify-center cursor-pointer ${
+            editor.isActive('heading', { level: 1 }) ? 'bg-bg-panel text-primary' : 'text-text-secondary'
+          }`}
+          title="Título 1"
+        >
+          H1
+        </button>
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
           disabled={disabled}
-          className="w-5 h-5 p-0 border border-border-color rounded-sm cursor-pointer bg-transparent"
-          title="Resaltado de fondo"
-          defaultValue="#ffff00"
-        />
-
+          className={`p-1 rounded-md hover:text-text-primary hover:bg-bg-panel disabled:opacity-40 transition-all font-bold text-xs min-w-[24px] h-[24px] flex items-center justify-center cursor-pointer ${
+            editor.isActive('heading', { level: 2 }) ? 'bg-bg-panel text-primary' : 'text-text-secondary'
+          }`}
+          title="Título 2"
+        >
+          H2
+        </button>
+        
         <span className="w-px h-4 bg-border-color mx-1" />
 
         <button
           type="button"
-          onClick={() => executeCommand('insertUnorderedList')}
+          onClick={() => editor.chain().focus().toggleBulletList().run()}
           disabled={disabled}
-          className="p-1 rounded-md text-text-secondary hover:text-text-primary hover:bg-bg-panel disabled:opacity-40 transition-all text-xs min-w-[24px] h-[24px] flex items-center justify-center cursor-pointer"
+          className={`p-1 rounded-md hover:text-text-primary hover:bg-bg-panel disabled:opacity-40 transition-all text-xs min-w-[24px] h-[24px] flex items-center justify-center cursor-pointer ${
+            editor.isActive('bulletList') ? 'bg-bg-panel text-primary' : 'text-text-secondary'
+          }`}
           title="Lista desordenada"
         >
           • List
         </button>
         <button
           type="button"
-          onClick={() => executeCommand('insertOrderedList')}
+          onClick={() => editor.chain().focus().toggleOrderedList().run()}
           disabled={disabled}
-          className="p-1 rounded-md text-text-secondary hover:text-text-primary hover:bg-bg-panel disabled:opacity-40 transition-all text-xs min-w-[24px] h-[24px] flex items-center justify-center cursor-pointer"
+          className={`p-1 rounded-md hover:text-text-primary hover:bg-bg-panel disabled:opacity-40 transition-all text-xs min-w-[24px] h-[24px] flex items-center justify-center cursor-pointer ${
+            editor.isActive('orderedList') ? 'bg-bg-panel text-primary' : 'text-text-secondary'
+          }`}
           title="Lista ordenada"
         >
           1. List
@@ -136,36 +152,21 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
         <button
           type="button"
-          onClick={() => executeCommand('justifyLeft')}
+          onClick={setLink}
           disabled={disabled}
-          className="p-1 rounded-md text-text-secondary hover:text-text-primary hover:bg-bg-panel disabled:opacity-40 transition-all text-xs min-w-[24px] h-[24px] flex items-center justify-center cursor-pointer"
-          title="Alineación izquierda"
+          className={`p-1 rounded-md hover:text-text-primary hover:bg-bg-panel disabled:opacity-40 transition-all text-xs min-w-[24px] h-[24px] flex items-center justify-center cursor-pointer ${
+            editor.isActive('link') ? 'bg-bg-panel text-primary' : 'text-text-secondary'
+          }`}
+          title="Enlace"
         >
-          ←
+          🔗
         </button>
+
         <button
           type="button"
-          onClick={() => executeCommand('justifyCenter')}
+          onClick={() => editor.chain().focus().clearNodes().unsetAllMarks().run()}
           disabled={disabled}
-          className="p-1 rounded-md text-text-secondary hover:text-text-primary hover:bg-bg-panel disabled:opacity-40 transition-all text-xs min-w-[24px] h-[24px] flex items-center justify-center cursor-pointer"
-          title="Alineación centro"
-        >
-          ↔
-        </button>
-        <button
-          type="button"
-          onClick={() => executeCommand('justifyRight')}
-          disabled={disabled}
-          className="p-1 rounded-md text-text-secondary hover:text-text-primary hover:bg-bg-panel disabled:opacity-40 transition-all text-xs min-w-[24px] h-[24px] flex items-center justify-center cursor-pointer"
-          title="Alineación derecha"
-        >
-          →
-        </button>
-        <button
-          type="button"
-          onClick={() => executeCommand('removeFormat')}
-          disabled={disabled}
-          className="p-1 rounded-md text-text-secondary hover:text-text-primary hover:bg-bg-panel disabled:opacity-40 transition-all text-xs min-w-[24px] h-[24px] flex items-center justify-center cursor-pointer"
+          className="p-1 rounded-md text-text-secondary hover:text-text-primary hover:bg-bg-panel disabled:opacity-40 transition-all text-xs min-w-[24px] h-[24px] flex items-center justify-center cursor-pointer ml-auto"
           title="Limpiar formato"
         >
           Clear
@@ -173,17 +174,9 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
       </div>
 
       {/* Editor Content Area */}
-      <div
-        ref={editorRef}
-        contentEditable={!disabled}
-        onInput={handleInput}
-        onPaste={handlePaste}
-        className="p-3 min-h-[120px] max-h-[260px] overflow-y-auto outline-none text-sm leading-relaxed"
-        style={{
-          boxSizing: 'border-box',
-          fontFamily: 'inherit',
-        }}
-      />
+      <div className="p-3 min-h-[120px] max-h-[260px] overflow-y-auto outline-none text-sm leading-relaxed tip-tap-content">
+        <EditorContent editor={editor} />
+      </div>
     </div>
   );
 };

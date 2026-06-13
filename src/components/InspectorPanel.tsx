@@ -24,6 +24,7 @@ interface InspectorPanelProps {
   onDeleteNode: (id: string) => void;
   readOnly?: boolean;
   onOpenAssetManager?: (currentUrl: string, onSelect: (url: string) => void) => void;
+  onOpenVideoManager?: (currentUrl: string, onSelect: (url: string) => void) => void;
   googleFonts?: string[];
 }
 
@@ -33,6 +34,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
   onDeleteNode,
   readOnly = false,
   onOpenAssetManager,
+  onOpenVideoManager,
   googleFonts
 }) => {
   const { t } = useTranslation();
@@ -199,22 +201,6 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                 />
               </div>
             )}
-            <div className="flex flex-col gap-1.5">
-              {renderLabel('Tipografía Base', 'fontFamily')}
-              <FontFamilyPicker value={p.fontFamily || 'Arial'} onChange={(val) => handleChange('fontFamily', val)} disabled={readOnly} googleFonts={googleFonts} />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              {renderLabel('Tamaño de Texto Base', 'fontSize')}
-              <NumberStepper value={p.fontSize || 16} onChange={(val) => handleChange('fontSize', val)} min={8} max={96} unit="px" disabled={readOnly} />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              {renderLabel('Color de Texto Base', 'color')}
-              <ColorPicker value={p.color || '#333333'} onChange={(val) => handleChange('color', val)} disabled={readOnly} />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              {renderLabel('Alineación Base', 'align')}
-              <AlignButtonGroup value={p.align || 'left'} onChange={(val) => handleChange('align', val)} disabled={readOnly} />
-            </div>
             <div className="flex flex-col gap-1.5">
               <PaddingEditor value={p.padding || '10px 20px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
             </div>
@@ -490,10 +476,58 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
           </div>
         );
 
-      case 'social':
+      case 'social': {
+        const networks = p.networks || [
+          { id: 'facebook', name: 'facebook', href: 'https://facebook.com', enabled: true },
+          { id: 'twitter', name: 'twitter', href: 'https://twitter.com', enabled: true },
+          { id: 'instagram', name: 'instagram', href: 'https://instagram.com', enabled: true },
+          { id: 'linkedin', name: 'linkedin', href: 'https://linkedin.com', enabled: false },
+          { id: 'youtube', name: 'youtube', href: 'https://youtube.com', enabled: false }
+        ];
+
+        const handleNetworkChange = (index: number, key: string, value: any) => {
+          const newNetworks = [...networks];
+          newNetworks[index] = { ...newNetworks[index], [key]: value };
+          handleChange('networks', newNetworks);
+        };
+
         return (
           <div className="flex flex-col gap-4">
             <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">Redes Sociales</h3>
+            
+            <div className="flex flex-col gap-3 border border-border-color rounded-md p-3 bg-bg-panel/50">
+              {networks.map((net: any, idx: number) => (
+                <div key={net.id} className="flex flex-col gap-2 border-b border-border-color pb-3 last:border-0 last:pb-0">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold capitalize text-text-primary">{net.name}</span>
+                    <label className="flex items-center cursor-pointer relative">
+                      <input
+                        type="checkbox"
+                        checked={net.enabled}
+                        onChange={(e) => handleNetworkChange(idx, 'enabled', e.target.checked)}
+                        disabled={readOnly}
+                        className="sr-only"
+                      />
+                      <div className={`w-8 h-4 bg-bg-hover rounded-full shadow-inner transition-colors ${net.enabled ? 'bg-primary' : ''}`}></div>
+                      <div className={`absolute w-3 h-3 bg-white rounded-full shadow inset-y-0.5 left-0.5 transition-transform ${net.enabled ? 'transform translate-x-4' : ''}`}></div>
+                    </label>
+                  </div>
+                  {net.enabled && (
+                    <div className="flex flex-col gap-1.5">
+                      <input
+                        type="text"
+                        value={net.href}
+                        onChange={(e) => handleNetworkChange(idx, 'href', e.target.value)}
+                        placeholder="URL"
+                        disabled={readOnly}
+                        className="bg-bg-hover border border-border-color text-text-primary p-1.5 px-2 rounded-md text-xs outline-none transition-all focus:border-primary w-full disabled:opacity-55"
+                      />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
             <div className="flex flex-col gap-1.5">
               {renderLabel('Alineación', 'align')}
               <AlignButtonGroup value={p.align || 'center'} options={['left', 'center', 'right']} onChange={(val) => handleChange('align', val as any)} disabled={readOnly} />
@@ -506,6 +540,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             </div>
           </div>
         );
+      }
 
       case 'video':
         return (
@@ -515,7 +550,21 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             {!isMobileTab && (
               <div className="flex flex-col gap-1.5">
                 {renderLabel('Enlace de Vídeo', 'videoUrl')}
-                <LinkInput value={p.videoUrl || ''} onChange={(val) => handleChange('videoUrl', val)} disabled={readOnly} />
+                <div className="flex gap-1.5 w-full items-center">
+                  <div className="flex-1">
+                    <LinkInput value={p.videoUrl || ''} onChange={(val) => handleChange('videoUrl', val)} disabled={readOnly} />
+                  </div>
+                  {onOpenVideoManager && (
+                    <button
+                      type="button"
+                      onClick={() => onOpenVideoManager(p.videoUrl || '', (url) => handleChange('videoUrl', url))}
+                      className="p-2 border border-border-color bg-bg-hover text-text-secondary hover:text-text-primary rounded-md flex items-center justify-center cursor-pointer shrink-0 transition-all hover:bg-bg-panel"
+                      title="Abrir gestor de videos"
+                    >
+                      🎥
+                    </button>
+                  )}
+                </div>
               </div>
             )}
             <div className="flex flex-col gap-1.5">
