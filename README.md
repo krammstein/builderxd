@@ -63,44 +63,106 @@ The `BuilderXD` component accepts the following props (`AppProps`):
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `initialTemplate` | `string` | `undefined` | Initial MJML or HTML string to load. |
-| `initialNodes` | `BlockNode[]` | `undefined` | Initial JSON nodes array. |
-| `fileManager` | `FileManagerProvider` | `undefined` | Custom file manager for image/video uploads. |
-| `espIntegration` | `ESPIntegration` | `undefined` | Integration object for Push/Pull templates. |
-| `uiConfig` | `UIConfig` | `{}` | Configure visibility of UI elements (e.g. `showExport`, `showThemeToggle`). |
-| `googleFonts` | `string[]` | `['Roboto', 'Open Sans', ...]` | List of Google Fonts available in the editor. |
+| `mode` | `'html' \| 'mjml'` | `undefined` | **Locks** the editor to a single output format. When set, the HTML/MJML switcher is hidden from the UI and the mode cannot be changed by the user. |
+| `defaultMode` | `'html' \| 'mjml'` | `'mjml'` | Sets the initial mode but still allows the user to switch between HTML and MJML manually. |
+| `initialTemplate` | `string` | `undefined` | Initial MJML or HTML string to load into the canvas. |
+| `initialNodes` | `BlockNode[]` | `undefined` | Initial nodes array in JSON format (internal AST). |
+| `fileManager` | `FileManagerProvider` | `undefined` | Custom file manager plugin for image/video uploads. |
+| `espIntegration` | `ESPIntegration` | `undefined` | Integration object for Push/Pull templates to/from an ESP. |
+| `uiConfig` | `UIConfig` | `{}` | Fine-grained control over UI element visibility (see table below). |
+| `googleFonts` | `string[]` | `['Roboto', 'Open Sans', ...]` | List of Google Fonts available in the editor dropdowns. |
+| `readOnly` | `boolean` | `false` | Disables all editing interactions. |
+| `theme` | `{ darkMode?: boolean }` | `undefined` | Programmatically control the dark/light theme. |
+
+#### `uiConfig` options
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `showImport` | `boolean` | `true` | Show the Import button in the header. |
+| `showExport` | `boolean` | `true` | Show the Export button in the header. |
+| `showSendTest` | `boolean` | `true` | Show the Send Test button. |
+| `showThemeToggle` | `boolean` | `true` | Show the dark/light mode toggle. |
+| `showLanguageToggle` | `boolean` | `true` | Show the language (ES/EN) toggle. |
+| `showDeviceToggle` | `boolean` | `true` | Show the desktop/mobile preview toggle. |
+| `showClearCanvas` | `boolean` | `true` | Show the "Clear Canvas" button. |
+| `showTemplateModeToggle` | `boolean` | `true` | Show the HTML/MJML mode switcher in the left panel. Automatically hidden when `mode` prop is set. |
 
 ### Methods (via ref)
 
 You can call these methods using a React ref attached to the `BuilderXD` component:
 
-- `exportHTML()`: Returns the compiled responsive HTML string.
-- `exportMJML()`: Returns the compiled MJML string.
-- `exportJSON()`: Returns the internal nodes state as a JSON array.
-- `loadTemplate(code: string, mode: 'html' | 'mjml')`: Loads a new template into the builder.
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `getNodes()` | `BlockNode[]` | Returns the raw internal node tree. |
+| `setNodes(nodes)` | `void` | Replaces the canvas content with a new node array. |
+| `getHTML()` | `string` | Returns the compiled responsive HTML string. |
+| `getMJML()` | `string` | Returns the compiled MJML string. |
+| `importTemplate(code, mode)` | `void` | Parses and loads an MJML or HTML string into the canvas. |
+| `exportTemplate(format)` | `Promise<string>` | Exports the template as `'html'`, `'mjml'`, or `'zip'`. |
+
+## Locking the output mode (`mode` prop)
+
+Use the `mode` prop when you want to restrict the editor to a **single output format**. This is useful when your backend only supports one format (e.g., only MJML), or when you want to enforce a consistent workflow.
+
+When `mode` is set:
+- The editor initializes in that mode.
+- The HTML/MJML switcher is **hidden** from the UI.
+- The mode **cannot be changed** programmatically or by the user.
+
+```tsx
+// Always outputs MJML — switcher is hidden
+<BuilderXD mode="mjml" ref={builderRef} />
+
+// Always outputs HTML — switcher is hidden
+<BuilderXD mode="html" ref={builderRef} />
+```
+
+To allow the user to switch modes freely, use `defaultMode` instead:
+
+```tsx
+// Starts in MJML mode but user can switch to HTML anytime
+<BuilderXD defaultMode="mjml" ref={builderRef} />
+```
 
 ## Advanced Setup
 
-If you want to use custom image uploading, implement the `FileManagerProvider`:
+### Custom Image Uploader
+
+Implement a `FileManagerProvider` to connect your own cloud storage:
 
 ```tsx
 const myFileManager = {
   id: 'my-uploader',
   name: 'My Cloud Storage',
   onUpload: async (file) => {
-    // upload file and return URL
-    return 'https://my-cdn.com/' + file.name;
+    // Upload to S3, Cloudinary, etc. and return the public URL
+    const url = await uploadToMyStorage(file);
+    return url;
   }
 };
 
 <BuilderXD fileManager={myFileManager} />
 ```
 
+### Loading an Existing Template
+
+Pass any valid MJML or HTML string via `initialTemplate`:
+
+```tsx
+const savedMjml = await fetch('/api/campaigns/1').then(r => r.text());
+
+<BuilderXD
+  mode="mjml"
+  initialTemplate={savedMjml}
+  ref={builderRef}
+/>
+```
+
 ## Examples
 
 We provide ready-to-use examples in the `examples/` directory of the package:
 - **`examples/BasicImplementation.tsx`**: A minimal setup showing how to mount the builder and use the `ref` to save data to your backend.
-- **`examples/AdvancedImplementation.tsx`**: An advanced implementation that demonstrates how to inject an existing MJML template from your database, implement a custom AWS S3 `FileManagerProvider`, and customize the builder's UI.
+- **`examples/AdvancedImplementation.tsx`**: An advanced implementation demonstrating the `mode` prop, `initialTemplate`, a custom `FileManagerProvider`, and a custom save handler.
 
 ## License
 
