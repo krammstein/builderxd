@@ -378,7 +378,7 @@ export const LexicalEditor: React.FC<LexicalEditorProps> = ({
         <Toolbar disabled={disabled} />
         <div className="p-3 min-h-[120px] max-h-[260px] overflow-y-auto outline-none text-sm leading-relaxed lexical-content">
           <RichTextPlugin
-            contentEditable={<ContentEditable className="outline-none min-h-[80px]" />}
+            contentEditable={<ContentEditable className="outline-none min-h-[80px]" dir="ltr" />}
             placeholder={<div className="text-text-muted text-sm pointer-events-none">Escribe aquí tu texto...</div>}
             ErrorBoundary={LexicalErrorBoundary}
           />
