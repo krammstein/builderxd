@@ -49,17 +49,19 @@ Este documento refleja el estado actual de la refactorización y desarrollo de f
 
 ---
 
-## 📅 Fase 5: Importación Avanzada Bidireccional (Postergado a v1.1+)
+## 📅 Fase 5: Importación Avanzada Bidireccional (En Progreso - v1.1+)
 **Objetivo:** Parsear código externo (MJML/HTML) de vuelta a nodos internos `BlockNode` para edición vía Drag & Drop.
 
-- [ ] **Mapeo de Nodos MJML:** Traducir etiquetas MJML a componentes del Builder.
-- [ ] **Soporte para Tablas:** Tabla simple nativa para HTML; tablas complejas → `custom_html`.
-- [ ] **Exportación de Funcionalidad:** `parseTemplateToNodes()` documentada para integraciones externas.
-- [ ] **Heurística de Renderizado Editable:** Atributos `data-id`, `data-prop` en bloques reconstruidos.
+- [x] **Mapeo de Nodos MJML (Módulo A):** Traducir el 100% de las etiquetas estándar MJML a componentes del Builder (incluyendo wrapper, group, hero).
+- [x] **Atributos Semánticos de Exportación (Módulo D):** Inyección de `data-b-type` y `data-b-props` para exportación e importación con fidelidad perfecta 1:1.
+- [x] **Tests Unitarios:** Suite de Vitest cubriendo compilador y parser en modo MJML/HTML implementada con éxito.
+- [x] **Configuración Global en Compilador:** Soporte matemático/lógico para configuraciones de `<mj-head>` (fuentes globales, título, preview).
+- [ ] **Soporte para Tablas:** Tablas complejas encapsuladas seguras en `custom_html`.
+- [ ] **UI de Configuración Global:** Panel en el Inspector para que el usuario controle el estado de la cabecera.
 
 ---
 
 ## Próximos Pasos (Post v1.0.0)
-1. Completar inyección de dependencias **Swiper.js** y **PhotoSwipe** (Fase 4).
-2. Investigar parser para importación avanzada (Fase 5).
-3. Sincronizar HTML del Lexical al iframe canvas en vivo (Refinamientos del editor).
+1. **Implementar UI de Configuración Global**: Panel React en el Sidebar/Inspector para editar `GlobalSettings` (`<mj-head>`).
+2. Completar inyección de dependencias **Swiper.js** y **PhotoSwipe** (Fase 4).
+3. Heurísticas de inferencia complejas para importación (Módulo B).
