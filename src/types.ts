@@ -28,6 +28,15 @@ export type BlockType =
   | 'flex_layout'
   | 'grid_layout';
 
+export interface GlobalSettings {
+  title?: string;
+  previewText?: string;
+  globalFontFamily?: string;
+  globalBackgroundColor?: string;
+  globalTextColor?: string;
+  breakpoint?: string;
+}
+
 export interface BlockNode {
   id: string;
   type: BlockType;

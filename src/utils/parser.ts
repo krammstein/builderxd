@@ -40,6 +40,23 @@ const parseMJMLNode = (el: Element): BlockNode | null => {
     return children;
   };
 
+  // Módulo D: Atributos Semánticos de Exportación (Nodos propios)
+  if (el.hasAttribute('data-b-type')) {
+    const bType = el.getAttribute('data-b-type') as BlockType | any;
+    let bProps = {};
+    try {
+      bProps = JSON.parse(el.getAttribute('data-b-props') || '{}');
+    } catch (e) {
+      console.warn('Error parsing data-b-props for', bType);
+    }
+    return {
+      id: generateId(bType),
+      type: bType,
+      properties: bProps,
+      children: parseChildren()
+    };
+  }
+
   switch (tagName) {
     case 'mj-body':
       // mj-body es solo un contenedor transparente, parseamos sus hijos y los devolvemos al nivel superior.
@@ -191,6 +208,67 @@ const parseMJMLNode = (el: Element): BlockNode | null => {
       };
     }
 
+    case 'mj-wrapper':
+      return {
+        id: generateId('wrapper'),
+        type: 'wrapper',
+        properties: commonProps,
+        children: parseChildren()
+      };
+
+    case 'mj-group':
+      return {
+        id: generateId('group'),
+        type: 'group',
+        properties: {
+          ...commonProps,
+          verticalAlign: el.getAttribute('vertical-align') || 'top'
+        },
+        children: parseChildren()
+      };
+
+    case 'mj-hero':
+      return {
+        id: generateId('hero'),
+        type: 'hero',
+        properties: {
+          ...commonProps,
+          mode: el.getAttribute('mode') || 'fluid-height',
+          backgroundImageUrl: el.getAttribute('background-url') || '',
+          backgroundWidth: el.getAttribute('background-width') || '',
+          backgroundHeight: el.getAttribute('background-height') || ''
+        },
+        children: parseChildren()
+      };
+
+    case 'table':
+      // Fallback para tablas si estamos en modo MJML/HTML que no mapean directo
+      if (el.getAttribute('data-mj-table') === 'true') {
+        return {
+          id: generateId('table'),
+          type: 'table',
+          properties: {
+            ...commonProps,
+            htmlContent: el.innerHTML
+          }
+        };
+      }
+      return {
+        id: generateId('custom_html'),
+        type: 'custom_html',
+        properties: {
+          htmlContent: el.outerHTML
+        }
+      };
+    case 'mj-raw':
+      return {
+        id: generateId('custom_html'),
+        type: 'custom_html',
+        properties: {
+          htmlContent: el.innerHTML
+        }
+      };
+
     // HTML Genérico estructural
     case 'div':
       // Heurística simple: un div con hijos estructurales se vuelve una sección, o lo pasamos a HTML custom
@@ -241,9 +319,19 @@ const parseMJMLNode = (el: Element): BlockNode | null => {
 /**
  * Convierte un string MJML o HTML en un AST de BlockNodes
  */
-export const parseTemplateToNodes = (code: string, _mode: 'mjml' | 'html'): BlockNode[] => {
+export const parseTemplateToNodes = (code: string, mode: 'mjml' | 'html'): BlockNode[] => {
+  let preparedCode = code;
+  
+  if (mode === 'mjml') {
+    // 1. Convertir tags MJML auto-cerrados a tags con cierre explícito (para que text/html no los anide)
+    preparedCode = preparedCode.replace(/<mj-([a-zA-Z0-9-]+)([^>]*?)\/>/gi, '<mj-$1$2></mj-$1>');
+    // 2. Proteger mj-table convirtiéndolo temporalmente en <table> para evitar que el DOMParser destruya los <tr>/<td>
+    preparedCode = preparedCode.replace(/<mj-table([^>]*)>/gi, '<table data-mj-table="true"$1>');
+    preparedCode = preparedCode.replace(/<\/mj-table>/gi, '</table>');
+  }
+
   const parser = new DOMParser();
-  const doc = parser.parseFromString(`<div>${code}</div>`, 'text/html');
+  const doc = parser.parseFromString(`<div>${preparedCode}</div>`, 'text/html');
   const rootContainer = doc.body.firstElementChild;
   
   if (!rootContainer) return [];

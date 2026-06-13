@@ -1,4 +1,4 @@
-import type { BlockNode } from '../types';
+import type { BlockNode, GlobalSettings } from '../types';
 
 const WEB_SAFE_FONTS = [
   'arial',
@@ -15,8 +15,10 @@ const WEB_SAFE_FONTS = [
   '-apple-system'
 ];
 
-const getUsedFonts = (nodes: BlockNode[]): string[] => {
+const getUsedFonts = (nodes: BlockNode[], globalFont?: string): string[] => {
   const fonts = new Set<string>();
+  if (globalFont) fonts.add(globalFont);
+  
   const traverse = (node: BlockNode) => {
     if (node.properties?.fontFamily) {
       fonts.add(node.properties.fontFamily);
@@ -30,8 +32,8 @@ const getUsedFonts = (nodes: BlockNode[]): string[] => {
 };
 
 // Converts the JSON tree structure into standard MJML
-export const compileToMJML = (nodes: BlockNode[]): string => {
-  const usedFonts = getUsedFonts(nodes);
+export const compileToMJML = (nodes: BlockNode[], settings?: GlobalSettings): string => {
+  const usedFonts = getUsedFonts(nodes, settings?.globalFontFamily);
   const googleFontsUsed = usedFonts.filter(f => !WEB_SAFE_FONTS.includes(f.toLowerCase()));
   
   let fontTags = '';
@@ -40,19 +42,27 @@ export const compileToMJML = (nodes: BlockNode[]): string => {
     fontTags += `    <mj-font name="${font}" href="https://fonts.googleapis.com/css?family=${encoded}" />\n`;
   });
 
-  let mjml = `<mjml>\n  <mj-head>\n${fontTags}    <mj-attributes>\n      <mj-all font-family="system-ui, -apple-system, sans-serif" />\n    </mj-attributes>\n  </mj-head>\n  <mj-body>\n`;
+  const titleTag = settings?.title ? `    <mj-title>${settings.title}</mj-title>\n` : '';
+  const previewTag = settings?.previewText ? `    <mj-preview>${settings.previewText}</mj-preview>\n` : '';
+  const globalFontAttr = settings?.globalFontFamily ? ` font-family="${settings.globalFontFamily}"` : ' font-family="system-ui, -apple-system, sans-serif"';
+  const globalTextColor = settings?.globalTextColor ? ` color="${settings.globalTextColor}"` : '';
+  const breakPointTag = settings?.breakpoint ? `    <mj-breakpoint width="${settings.breakpoint}" />\n` : '';
+  const bodyBg = settings?.globalBackgroundColor ? ` background-color="${settings.globalBackgroundColor}"` : '';
+
+  let mjml = `<mjml>\n  <mj-head>\n${titleTag}${previewTag}${breakPointTag}${fontTags}    <mj-attributes>\n      <mj-all${globalFontAttr}${globalTextColor} />\n    </mj-attributes>\n  </mj-head>\n  <mj-body${bodyBg}>\n`;
 
   const renderNode = (node: BlockNode, indent: string = '    '): string => {
     const props = node.properties;
     const styleAttr = (key: string, mjmlKey: string) => {
       return props[key] !== undefined ? ` ${mjmlKey}="${props[key]}"` : '';
     };
+    const semAttrs = ` data-b-type="${node.type}" data-b-props="${JSON.stringify(props).replace(/"/g, '&quot;')}"`;
 
     switch (node.type) {
       case 'section': {
         const bg = props.backgroundColor ? ` background-color="${props.backgroundColor}"` : '';
         const pad = props.padding ? ` padding="${props.padding}"` : '';
-        let content = `${indent}<mj-section${bg}${pad}>\n`;
+        let content = `${indent}<mj-section${bg}${pad}${semAttrs}>\n`;
         if (node.children) {
           node.children.forEach((child) => {
             content += renderNode(child, indent + '  ');
@@ -64,7 +74,7 @@ export const compileToMJML = (nodes: BlockNode[]): string => {
       case 'column': {
         const width = props.width ? ` width="${props.width}"` : '';
         const pad = props.padding ? ` padding="${props.padding}"` : '';
-        let content = `${indent}<mj-column${width}${pad}>\n`;
+        let content = `${indent}<mj-column${width}${pad}${semAttrs}>\n`;
         if (node.children) {
           node.children.forEach((child) => {
             content += renderNode(child, indent + '  ');
@@ -84,7 +94,7 @@ export const compileToMJML = (nodes: BlockNode[]): string => {
         const weight = styleAttr('fontWeight', 'font-weight');
         const style = styleAttr('fontStyle', 'font-style');
         const decoration = styleAttr('textDecoration', 'text-decoration');
-        return `${indent}<mj-text${color}${size}${align}${pad}${font}${weight}${style}${decoration}>${props.content || ''}</mj-text>\n`;
+        return `${indent}<mj-text${color}${size}${align}${pad}${font}${weight}${style}${decoration}${semAttrs}>${props.content || ''}</mj-text>\n`;
       }
       case 'image': {
         const src = props.url ? ` src="${props.url}"` : ' src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=60"';
@@ -92,7 +102,7 @@ export const compileToMJML = (nodes: BlockNode[]): string => {
         const align = styleAttr('align', 'align');
         const pad = styleAttr('padding', 'padding');
         const radius = styleAttr('borderRadius', 'border-radius');
-        return `${indent}<mj-image${src}${alt}${align}${pad}${radius} />\n`;
+        return `${indent}<mj-image${src}${alt}${align}${pad}${radius}${semAttrs} />\n`;
       }
       case 'button': {
         const href = props.url ? ` href="${props.url}"` : ' href="#"';
@@ -103,17 +113,17 @@ export const compileToMJML = (nodes: BlockNode[]): string => {
         const align = styleAttr('align', 'align');
         const font = styleAttr('fontFamily', 'font-family');
         const size = styleAttr('fontSize', 'font-size');
-        return `${indent}<mj-button${href}${bg}${color}${radius}${pad}${align}${font}${size}>${props.content || ''}</mj-button>\n`;
+        return `${indent}<mj-button${href}${bg}${color}${radius}${pad}${align}${font}${size}${semAttrs}>${props.content || ''}</mj-button>\n`;
       }
       case 'divider': {
         const color = styleAttr('color', 'border-color');
         const thickness = styleAttr('thickness', 'border-width');
         const pad = styleAttr('padding', 'padding');
-        return `${indent}<mj-divider${color}${thickness}${pad} />\n`;
+        return `${indent}<mj-divider${color}${thickness}${pad}${semAttrs} />\n`;
       }
       case 'spacer': {
         const height = styleAttr('height', 'height');
-        return `${indent}<mj-spacer${height} />\n`;
+        return `${indent}<mj-spacer${height}${semAttrs} />\n`;
       }
       case 'social': {
         const align = props.align ? ` align="${props.align}"` : '';
@@ -129,28 +139,28 @@ export const compileToMJML = (nodes: BlockNode[]): string => {
             socialElements += `${indent}  <mj-social-element name="${net.name}" href="${net.href}" />\n`;
           }
         });
-        return `${indent}<mj-social${align}${pad}>\n${socialElements}${indent}</mj-social>\n`;
+        return `${indent}<mj-social${align}${pad}${semAttrs}>\n${socialElements}${indent}</mj-social>\n`;
       }
       case 'video': {
         const src = props.thumbnailUrl ? ` src="${props.thumbnailUrl}"` : ' src="https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800&auto=format&fit=crop&q=60"';
         const href = props.videoUrl ? ` href="${props.videoUrl}"` : ' href="#"';
         const align = styleAttr('align', 'align');
         const pad = styleAttr('padding', 'padding');
-        return `${indent}<mj-image${src}${href}${align}${pad} />\n`;
+        return `${indent}<mj-image${src}${href}${align}${pad}${semAttrs} />\n`;
       }
       case 'custom_html': {
-        return `${indent}<mj-raw>${props.htmlContent || '<div style="padding: 20px; text-align: center;">HTML Personalizado</div>'}</mj-raw>\n`;
+        return `${indent}<mj-raw${semAttrs}>${props.htmlContent || '<div style="padding: 20px; text-align: center;">HTML Personalizado</div>'}</mj-raw>\n`;
       }
       case 'countdown': {
         const align = styleAttr('align', 'align');
         const pad = styleAttr('padding', 'padding');
         const color = styleAttr('color', 'color');
-        return `${indent}<mj-text${align}${pad}${color} font-size="20px">Contador: ${props.endTime || '2026-12-31'}</mj-text>\n`;
+        return `${indent}<mj-text${align}${pad}${color} font-size="20px"${semAttrs}>Contador: ${props.endTime || '2026-12-31'}</mj-text>\n`;
       }
       case 'accordion': {
         const title = props.title || 'Título del Acordeón';
         const content = props.content || 'Detalles del acordeón...';
-        return `${indent}<mj-accordion>
+        return `${indent}<mj-accordion${semAttrs}>
 ${indent}  <mj-accordion-element>
 ${indent}    <mj-accordion-title>${title}</mj-accordion-title>
 ${indent}    <mj-accordion-text>${content}</mj-accordion-text>
@@ -162,7 +172,7 @@ ${indent}</mj-accordion>\n`;
           'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=60',
           'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800&auto=format&fit=crop&q=60'
         ];
-        let carouselStr = `${indent}<mj-carousel>\n`;
+        let carouselStr = `${indent}<mj-carousel${semAttrs}>\n`;
         imagesList.forEach((img: string) => {
           carouselStr += `${indent}  <mj-carousel-image src="${img.trim()}" />\n`;
         });
@@ -175,13 +185,13 @@ ${indent}</mj-accordion>\n`;
         const color = props.color || '#4f46e5';
         const align = props.align || 'center';
         const href = props.url ? ` href="${props.url}"` : '';
-        return `${indent}<mj-text align="${align}" color="${color}" font-size="${size}px"${href}>${iconName === 'Star' ? '★' : iconName === 'Heart' ? '♥' : iconName === 'Smile' ? '☺' : iconName === 'Settings' ? '⚙' : iconName === 'Mail' ? '✉' : 'ℹ'}</mj-text>\n`;
+        return `${indent}<mj-text align="${align}" color="${color}" font-size="${size}px"${href}${semAttrs}>${iconName === 'Star' ? '★' : iconName === 'Heart' ? '♥' : iconName === 'Smile' ? '☺' : iconName === 'Settings' ? '⚙' : iconName === 'Mail' ? '✉' : 'ℹ'}</mj-text>\n`;
       }
       case 'nav_menu': {
         const align = props.align || 'center';
         const color = props.color || '#4f46e5';
         const items = Array.isArray(props.items) ? props.items : [];
-        let navStr = `${indent}<mj-navbar align="${align}">\n`;
+        let navStr = `${indent}<mj-navbar align="${align}"${semAttrs}>\n`;
         items.forEach((item: any) => {
           navStr += `${indent}  <mj-navbar-link href="${item.url || '#'}" color="${color}">${item.label || 'Link'}</mj-navbar-link>\n`;
         });
@@ -197,7 +207,7 @@ ${indent}</mj-accordion>\n`;
         const imgCol = `${indent}  <mj-column width="${imgWidth}%"><mj-image src="${imgUrl}" /></mj-column>\n`;
         const textCol = `${indent}  <mj-column width="${100 - imgWidth}%"><mj-text>${text}</mj-text></mj-column>\n`;
         
-        return `${indent}<mj-section>\n${pos === 'left' ? imgCol + textCol : textCol + imgCol}${indent}</mj-section>\n`;
+        return `${indent}<mj-section${semAttrs}>\n${pos === 'left' ? imgCol + textCol : textCol + imgCol}${indent}</mj-section>\n`;
       }
       case 'product_card': {
         const imgUrl = props.imageUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=60';
@@ -206,7 +216,7 @@ ${indent}</mj-accordion>\n`;
         const btnText = props.buttonText || 'Comprar';
         const btnUrl = props.buttonUrl || '#';
         const color = props.color || '#4f46e5';
-        return `${indent}<mj-section background-color="${props.backgroundColor || '#ffffff'}" padding="${props.padding || '15px'}">
+        return `${indent}<mj-section background-color="${props.backgroundColor || '#ffffff'}" padding="${props.padding || '15px'}"${semAttrs}>
 ${indent}  <mj-column>
 ${indent}    <mj-image src="${imgUrl}" width="150px" />
 ${indent}    <mj-text align="center" font-size="16px" font-weight="bold">${title}</mj-text>
@@ -219,7 +229,7 @@ ${indent}</mj-section>\n`;
         const text = props.text || 'Esta es una excelente cita o testimonio.';
         const author = props.author || 'Autor de Cita';
         const color = props.color || '#555555';
-        return `${indent}<mj-section background-color="${props.backgroundColor || '#f9f9f9'}" padding="${props.padding || '15px'}">
+        return `${indent}<mj-section background-color="${props.backgroundColor || '#f9f9f9'}" padding="${props.padding || '15px'}"${semAttrs}>
 ${indent}  <mj-column>
 ${indent}    <mj-text font-style="italic" color="${color}" align="center">"${text}"</mj-text>
 ${indent}    <mj-text font-weight="bold" align="center">- ${author}</mj-text>
@@ -229,7 +239,7 @@ ${indent}</mj-section>\n`;
       case 'wrapper': {
         const bg = props.backgroundColor ? ` background-color="${props.backgroundColor}"` : '';
         const pad = props.padding ? ` padding="${props.padding}"` : '';
-        let content = `${indent}<mj-wrapper${bg}${pad}>\n`;
+        let content = `${indent}<mj-wrapper${bg}${pad}${semAttrs}>\n`;
         if (node.children) {
           node.children.forEach((child) => {
             content += renderNode(child, indent + '  ');
@@ -241,7 +251,7 @@ ${indent}</mj-section>\n`;
       case 'group': {
         const width = props.width ? ` width="${props.width}"` : '';
         const vAlign = props.verticalAlign ? ` vertical-align="${props.verticalAlign}"` : '';
-        let content = `${indent}<mj-group${width}${vAlign}>\n`;
+        let content = `${indent}<mj-group${width}${vAlign}${semAttrs}>\n`;
         if (node.children) {
           node.children.forEach((child) => {
             content += renderNode(child, indent + '  ');
@@ -257,7 +267,7 @@ ${indent}</mj-section>\n`;
         const bgW = props.backgroundWidth ? ` background-width="${props.backgroundWidth}"` : '';
         const bgH = props.backgroundHeight ? ` background-height="${props.backgroundHeight}"` : '';
         const pad = props.padding ? ` padding="${props.padding}"` : '';
-        let content = `${indent}<mj-hero${mode}${bgUrl}${bgColor}${bgW}${bgH}${pad}>\n`;
+        let content = `${indent}<mj-hero${mode}${bgUrl}${bgColor}${bgW}${bgH}${pad}${semAttrs}>\n`;
         if (node.children) {
           node.children.forEach((child) => {
             content += renderNode(child, indent + '  ');
@@ -282,8 +292,9 @@ ${indent}</mj-section>\n`;
 // Generates email-friendly responsive HTML with an embedded postMessage communicator script
 export const compileToHTML = (
   nodes: BlockNode[],
-  selectedId: string | null,
-  isMobile: boolean = false
+  selectedId: string | null = null,
+  isMobile: boolean = false,
+  settings?: GlobalSettings
 ): string => {
   const getResponsiveStyle = (node: BlockNode, key: string, defaultValue: any) => {
     if (isMobile && node.mobileProperties && node.mobileProperties[key] !== undefined) {
@@ -303,7 +314,8 @@ export const compileToHTML = (
   const renderNode = (node: BlockNode): string => {
     const isSelectedClass = node.id === selectedId ? ' builder-element-selected' : '';
     const p = node.properties;
-    const attr = `data-id="${node.id}" class="builder-element${isSelectedClass}"`;
+    const semAttrs = ` data-b-type="${node.type}" data-b-props="${JSON.stringify(p).replace(/"/g, '&quot;')}"`;
+    const attr = `data-id="${node.id}" class="builder-element${isSelectedClass}"${semAttrs}`;
     const indent = '          ';
 
     switch (node.type) {
@@ -765,7 +777,7 @@ ${indent}</table>`;
 
   const bodyHtml = nodes.map(renderNode).join('');
 
-  const usedFonts = getUsedFonts(nodes);
+  const usedFonts = getUsedFonts(nodes, settings?.globalFontFamily);
   const googleFontsUsed = usedFonts.filter(f => !WEB_SAFE_FONTS.includes(f.toLowerCase()));
   
   let fontLinks = '';
@@ -774,20 +786,27 @@ ${indent}</table>`;
     fontLinks += `      <link href="https://fonts.googleapis.com/css2?family=${encoded}:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />\n`;
   });
 
+  const pageTitle = settings?.title || 'Email Preview';
+  const previewHtml = settings?.previewText ? `\n      <div style="display: none; max-height: 0px; overflow: hidden;">${settings.previewText}</div>` : '';
+  const bodyBg = settings?.globalBackgroundColor || '#f7f9fa';
+  const fontFamily = settings?.globalFontFamily ? `${settings.globalFontFamily}, system-ui, sans-serif` : 'system-ui, -apple-system, sans-serif';
+  const textColor = settings?.globalTextColor ? `color: ${settings.globalTextColor};` : '';
+
   return `
     <!DOCTYPE html>
     <html lang="es">
     <head>
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Email Preview</title>
+      <title>${pageTitle}</title>
 ${fontLinks}
       <style>
         body {
           margin: 0;
           padding: 20px 10px;
-          background-color: #f7f9fa;
-          font-family: system-ui, -apple-system, sans-serif;
+          background-color: ${bodyBg};
+          font-family: ${fontFamily};
+          ${textColor}
           box-sizing: border-box;
           min-height: 100vh;
         }
@@ -900,7 +919,7 @@ ${fontLinks}
         }
       </style>
     </head>
-    <body>
+    <body>${previewHtml}
       <div id="builder-canvas-wrapper" style="width: 100%; max-width: 600px; margin: 0 auto; background-color: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border-radius: 8px; overflow: hidden; min-height: 400px; border: 1px solid #e5e7eb;">
         ${bodyHtml}
       </div>
