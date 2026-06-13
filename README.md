@@ -96,6 +96,12 @@ const myFileManager = {
 <BuilderXD fileManager={myFileManager} />
 ```
 
+## Examples
+
+We provide ready-to-use examples in the `examples/` directory of the package:
+- **`examples/BasicImplementation.tsx`**: A minimal setup showing how to mount the builder and use the `ref` to save data to your backend.
+- **`examples/AdvancedImplementation.tsx`**: An advanced implementation that demonstrates how to inject an existing MJML template from your database, implement a custom AWS S3 `FileManagerProvider`, and customize the builder's UI.
+
 ## License
 
 MIT License
