@@ -329,12 +329,13 @@ function Toolbar({ disabled }: { disabled: boolean }) {
   );
 }
 
-function HtmlPlugin({ html, onChange }: { html: string; onChange: (v: string) => void }) {
+function HtmlPlugin({ html }: { html: string }) {
   const [editor] = useLexicalComposerContext();
-  const skipNextRef = useRef(false);
+  const lastEmittedRef = useRef('');
 
   useEffect(() => {
-    skipNextRef.current = true;
+    if (lastEmittedRef.current === html) return;
+    lastEmittedRef.current = html;
     editor.update(() => {
       const root = $getRoot();
       root.clear();
@@ -349,14 +350,19 @@ function HtmlPlugin({ html, onChange }: { html: string; onChange: (v: string) =>
     });
   }, [html, editor]);
 
+  return null;
+}
+
+function ChangePlugin({ onChange }: { onChange: (v: string) => void }) {
+  const [editor] = useLexicalComposerContext();
+  const lastEmittedRef = useRef('');
+
   useEffect(() => {
     return editor.registerUpdateListener(({ editorState }) => {
-      if (skipNextRef.current) {
-        skipNextRef.current = false;
-        return;
-      }
       editorState.read(() => {
         const htmlStr = $generateHtmlFromNodes(editor);
+        if (htmlStr === lastEmittedRef.current) return;
+        lastEmittedRef.current = htmlStr;
         onChange(htmlStr);
       }, { editor });
     });
@@ -373,7 +379,8 @@ export const LexicalEditor: React.FC<LexicalEditorProps> = ({
   return (
     <div className="flex flex-col border border-border-color rounded-lg overflow-hidden bg-bg-panel text-text-primary">
       <LexicalComposer initialConfig={editorConfig}>
-        <HtmlPlugin html={value} onChange={onChange} />
+        <HtmlPlugin html={value} />
+        <ChangePlugin onChange={onChange} />
         <DisabledPlugin disabled={disabled} />
         <Toolbar disabled={disabled} />
         <div className="p-3 min-h-[120px] max-h-[260px] overflow-y-auto outline-none text-sm leading-relaxed lexical-content">
