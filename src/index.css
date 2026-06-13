@@ -163,14 +163,14 @@ body {
   to { transform: scale(1); opacity: 1; }
 }
 
-/* RichTextEditor custom styles */
-.builder-rich-text-editor [contenteditable] {
-  border-bottom-left-radius: 6px;
-  border-bottom-right-radius: 6px;
+/* LexicalEditor custom styles */
+.lexical-content [contenteditable] {
   background-color: var(--bg-hover, #f3f4f6);
+  border-radius: 6px;
+  padding: 8px 10px;
   font-family: inherit;
   font-size: 12.5px;
-  min-height: 120px;
+  min-height: 80px;
   color: var(--text-primary);
 }
 

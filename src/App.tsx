@@ -4,7 +4,7 @@ import { LeftPanel } from './components/LeftPanel';
 import { InspectorPanel } from './components/InspectorPanel';
 import { Canvas } from './components/Canvas';
 import { CodeDrawer } from './components/CodeDrawer';
-import type { BlockNode, BlockType, DeviceMode, FileManagerProvider, ESPIntegration, UIConfig, TemplateMode } from './types';
+import type { BlockNode, BlockType, DeviceMode, FileManagerProvider, ESPIntegration, TemplateMode } from './types';
 
 import { compileToMJML, compileToHTML } from './utils/compiler';
 import { useTranslation } from './context/LanguageContext';
@@ -23,6 +23,16 @@ export interface AppProps {
     headerColor?: string;
     logoUrl?: string;
     showExportBtn?: boolean;
+    showImport?: boolean;
+    showExport?: boolean;
+    showSendTest?: boolean;
+    showThemeToggle?: boolean;
+    showLanguageToggle?: boolean;
+    showDeviceToggle?: boolean;
+    showHistoryToggle?: boolean;
+    showClearCanvas?: boolean;
+    showTemplateModeToggle?: boolean;
+    confirmClearPrompt?: string;
   };
   fileManagerProviders?: FileManagerProvider[];
   espIntegrations?: ESPIntegration[];
@@ -245,9 +255,9 @@ const App = forwardRef<BuilderRef, AppProps>(({
 
   const customStyles = {
     '--primary': theme?.primaryColor || '#4F46E5',
-    '--primary-hover': theme?.primaryColorHover || '#4338ca',
-    '--accent-color': theme?.accentColor || '#aa3bff',
-    '--border-radius-val': theme?.borderRadius !== undefined ? `${theme.borderRadius}px` : '8px'
+    '--primary-hover': '#4338ca',
+    '--accent-color': '#aa3bff',
+    '--border-radius-val': '8px'
   } as React.CSSProperties;
 
   // History management
@@ -785,7 +795,7 @@ const App = forwardRef<BuilderRef, AppProps>(({
 
   const handleClearCanvas = () => {
     if (readOnly) return;
-    const confirmMsg = confirmClearPrompt || '¿Está seguro de que desea limpiar todo el contenido del lienzo? Esta acción no se puede deshacer.';
+    const confirmMsg = uiConfig?.confirmClearPrompt || '¿Está seguro de que desea limpiar todo el contenido del lienzo? Esta acción no se puede deshacer.';
     if (window.confirm(confirmMsg)) {
       updateNodesAndHistory([]);
       setSelectedId(null);
@@ -825,9 +835,8 @@ const App = forwardRef<BuilderRef, AppProps>(({
 
   const handleUpdateNodeContent = (id: string, content: string, propName?: string) => {
     if (readOnly) return;
-    const clean = content.replace(/<\/?[^>]+(>|$)/g, "");
     const targetProp = propName || 'content';
-    handleUpdateProperties(id, { [targetProp]: clean }, false);
+    handleUpdateProperties(id, { [targetProp]: content }, false);
   };
 
   // Move node handler (Up / Down)

@@ -241,7 +241,7 @@ const parseMJMLNode = (el: Element): BlockNode | null => {
 /**
  * Convierte un string MJML o HTML en un AST de BlockNodes
  */
-export const parseTemplateToNodes = (code: string, mode: 'mjml' | 'html'): BlockNode[] => {
+export const parseTemplateToNodes = (code: string, _mode: 'mjml' | 'html'): BlockNode[] => {
   const parser = new DOMParser();
   const doc = parser.parseFromString(`<div>${code}</div>`, 'text/html');
   const rootContainer = doc.body.firstElementChild;

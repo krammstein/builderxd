@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from '../context/LanguageContext';
 import type { BlockNode } from '../types';
 import { Sliders, Smartphone, Trash2 } from 'lucide-react';
-import { RichTextEditor } from './inspector/RichTextEditor';
+import { LexicalEditor } from './inspector/LexicalEditor';
 
 // Import Custom Widgets
 import { ColorPicker } from './inspector/ColorPicker';
@@ -222,14 +222,12 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             {!isMobileTab && (
               <div className="flex flex-col gap-1.5">
                 {renderLabel('Contenido', 'content')}
-                {selectedNode.type === 'paragraph' || selectedNode.type === 'text' ? (
-                  <div className="builder-rich-text-editor">
-                    <RichTextEditor
-                      value={p.content || ''}
-                      onChange={(val) => handleChange('content', val)}
-                      disabled={readOnly}
-                    />
-                  </div>
+                {selectedNode.type === 'text' ? (
+                  <LexicalEditor
+                    value={p.content || ''}
+                    onChange={(val) => handleChange('content', val)}
+                    disabled={readOnly}
+                  />
                 ) : (
                   <textarea
                     value={p.content || ''}

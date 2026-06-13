@@ -1,31 +1,6 @@
 import React, { useState } from 'react';
 import type { BlockType, BlockNode, UIConfig, TemplateMode } from '../types';
-import {
-  Type,
-  Image,
-  Square,
-  Minus,
-  MoveVertical,
-  Share2,
-  Layout,
-  Columns,
-  Search,
-  Trash2,
-  ChevronUp,
-  ChevronDown,
-  Layers,
-  Video,
-  Code,
-  Clock,
-  Menu,
-  Images,
-  Star,
-  FolderOpen,
-  LayoutGrid,
-  FileText,
-  User,
-  ShoppingBag
-} from 'lucide-react';
+import { Layout, Search, Trash2, ChevronUp, ChevronDown, Layers, FolderOpen, LayoutGrid } from 'lucide-react';
 import { componentRegistry } from './ComponentRegistry';
 
 interface LeftPanelProps {
@@ -103,7 +78,7 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
             </button>
           )}
           <span className={`mr-2 flex items-center shrink-0 ${isSelected ? 'text-primary' : 'text-text-muted'}`}>
-            {React.cloneElement(componentRegistry.find((c) => c.type === node.type)?.icon as React.ReactElement || <Layout size={14} />, { size: 14 })}
+            {React.cloneElement(componentRegistry.find((c) => c.type === node.type)?.icon as React.ReactElement<{ size?: number }> || <Layout size={14} />, { size: 14 })}
           </span>
           <span className="text-xs font-medium truncate flex-1">{displayName}</span>
 
