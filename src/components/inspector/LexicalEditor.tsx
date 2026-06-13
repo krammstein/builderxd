@@ -331,13 +331,10 @@ function Toolbar({ disabled }: { disabled: boolean }) {
 
 function HtmlPlugin({ html, onChange }: { html: string; onChange: (v: string) => void }) {
   const [editor] = useLexicalComposerContext();
-  const isInternalRef = useRef(false);
-  const lastHtmlRef = useRef(html);
+  const skipNextRef = useRef(false);
 
   useEffect(() => {
-    if (lastHtmlRef.current === html) return;
-    lastHtmlRef.current = html;
-    isInternalRef.current = true;
+    skipNextRef.current = true;
     editor.update(() => {
       const root = $getRoot();
       root.clear();
@@ -350,17 +347,18 @@ function HtmlPlugin({ html, onChange }: { html: string; onChange: (v: string) =>
         }
       }
     });
-    isInternalRef.current = false;
   }, [html, editor]);
 
   useEffect(() => {
     return editor.registerUpdateListener(({ editorState }) => {
-      if (isInternalRef.current) return;
+      if (skipNextRef.current) {
+        skipNextRef.current = false;
+        return;
+      }
       editorState.read(() => {
         const htmlStr = $generateHtmlFromNodes(editor);
-        lastHtmlRef.current = htmlStr;
         onChange(htmlStr);
-      });
+      }, { editor });
     });
   }, [editor, onChange]);
 
