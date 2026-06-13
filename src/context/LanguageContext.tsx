@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { Language, TranslationDict } from '../types';
 
 
@@ -65,7 +65,34 @@ const translations: Record<Language, TranslationDict> = {
     componentCustomHtml: 'HTML Personalizado',
     componentCountdown: 'Contador Regresivo',
     componentAccordion: 'Acordeón de Contenido',
-    componentCarousel: 'Carrusel de Imágenes'
+    componentCarousel: 'Carrusel de Imágenes',
+    clearCanvas: 'Limpiar',
+    componentLibrary: 'Librería de Componentes',
+    layersTree: 'Árbol de Capas',
+    layersLabel: 'Capas',
+    assetsLabel: 'Recursos',
+    assetManager: 'Gestor de Recursos',
+    noAssets: 'No hay imágenes o recursos locales subidos aún.',
+    useIntegrations: 'Usa las integraciones del menú superior.',
+    dragToCanvas: 'Arrastra componentes al canvas central.',
+    clearFormat: 'Limpiar formato',
+    htmlMode: 'HTML',
+    mjmlMode: 'MJML',
+    componentHeading: 'Título',
+    componentParagraph: 'Párrafo',
+    componentIcon: 'Icono',
+    componentNavMenu: 'Menú Nav',
+    componentImageText: 'Img + Texto',
+    componentProductCard: 'Producto',
+    componentQuote: 'Cita',
+    componentTable: 'Tabla',
+    componentWrapper: 'Wrapper',
+    componentGroup: 'Grupo',
+    componentHero: 'Hero',
+    componentSlider: 'Slider',
+    componentGallery: 'Galería',
+    componentFlexLayout: 'Flex Layout',
+    componentGridLayout: 'Grid Layout'
   },
   en: {
     title: 'BuilderXD',
@@ -129,7 +156,34 @@ const translations: Record<Language, TranslationDict> = {
     componentCustomHtml: 'Custom HTML',
     componentCountdown: 'Countdown Timer',
     componentAccordion: 'Accordion Menu',
-    componentCarousel: 'Image Carousel'
+    componentCarousel: 'Image Carousel',
+    clearCanvas: 'Clear',
+    componentLibrary: 'Component Library',
+    layersTree: 'Layers Tree',
+    layersLabel: 'Layers',
+    assetsLabel: 'Assets',
+    assetManager: 'Asset Manager',
+    noAssets: 'No local images or assets uploaded yet.',
+    useIntegrations: 'Use the integrations in the top menu.',
+    dragToCanvas: 'Drag components to the central canvas.',
+    clearFormat: 'Clear formatting',
+    htmlMode: 'HTML',
+    mjmlMode: 'MJML',
+    componentHeading: 'Heading',
+    componentParagraph: 'Paragraph',
+    componentIcon: 'Icon',
+    componentNavMenu: 'Nav Menu',
+    componentImageText: 'Image + Text',
+    componentProductCard: 'Product Card',
+    componentQuote: 'Quote / Testimonial',
+    componentTable: 'Table',
+    componentWrapper: 'Wrapper',
+    componentGroup: 'Group',
+    componentHero: 'Hero Banner',
+    componentSlider: 'Slider',
+    componentGallery: 'Gallery',
+    componentFlexLayout: 'Flex Layout',
+    componentGridLayout: 'Grid Layout'
   }
 };
 
@@ -141,11 +195,17 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const LanguageProvider: React.FC<{ children: React.ReactNode; initialLang?: Language }> = ({ children, initialLang }) => {
   const [language, setLanguageState] = useState<Language>(() => {
+    if (initialLang) return initialLang;
     const saved = localStorage.getItem('builderxd_lang');
     return (saved === 'es' || saved === 'en' ? saved : 'es') as Language;
   });
+
+  // Sync when the external prop changes
+  useEffect(() => {
+    if (initialLang) setLanguageState(initialLang);
+  }, [initialLang]);
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);

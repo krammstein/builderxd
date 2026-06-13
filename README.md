@@ -64,6 +64,7 @@ The `BuilderXD` component accepts the following props (`AppProps`):
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
 | `mode` | `'html' \| 'mjml'` | `undefined` | **Locks** the editor to a single output format. When set, the HTML/MJML switcher is hidden from the UI and the mode cannot be changed by the user. |
+| `lang` | `'es' \| 'en'` | `undefined` | **Locks** the editor to a specific language. When set, the language toggle is hidden and the UI will always use the specified language. When not set, language defaults to the user's last choice (stored in localStorage). |
 | `defaultMode` | `'html' \| 'mjml'` | `'mjml'` | Sets the initial mode but still allows the user to switch between HTML and MJML manually. |
 | `initialTemplate` | `string` | `undefined` | Initial MJML or HTML string to load into the canvas. |
 | `initialNodes` | `BlockNode[]` | `undefined` | Initial nodes array in JSON format (internal AST). |

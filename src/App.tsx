@@ -4,7 +4,7 @@ import { LeftPanel } from './components/LeftPanel';
 import { InspectorPanel } from './components/InspectorPanel';
 import { Canvas } from './components/Canvas';
 import { CodeDrawer } from './components/CodeDrawer';
-import type { BlockNode, BlockType, DeviceMode, FileManagerProvider, ESPIntegration, TemplateMode } from './types';
+import type { BlockNode, BlockType, DeviceMode, FileManagerProvider, ESPIntegration, TemplateMode, Language } from './types';
 
 import { compileToMJML, compileToHTML } from './utils/compiler';
 import { useTranslation } from './context/LanguageContext';
@@ -17,7 +17,9 @@ export interface AppProps {
   onSave?: (data: { nodes: BlockNode[]; mjml: string; html: string }) => void;
   onExport?: (data: { nodes: BlockNode[]; mjml: string; html: string }) => void;
   onTemplateChange?: (mjml: string, html: string) => void;
-  /** When defined, locks the editor to this mode and hides the HTML/MJML switcher */
+  /** Locks the editor language. When not set, language is controlled by the built-in toggle and localStorage. */
+  lang?: Language;
+  /** When defined, locks the editor to a single output format and hides the HTML/MJML switcher */
   mode?: 'mjml' | 'html';
   defaultMode?: 'mjml' | 'html';
   readOnly?: boolean;

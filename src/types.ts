@@ -112,6 +112,36 @@ export interface TranslationDict {
   componentCountdown: string;
   componentAccordion: string;
   componentCarousel: string;
+  // LeftPanel
+  clearCanvas: string;
+  componentLibrary: string;
+  layersTree: string;
+  layersLabel: string;
+  assetsLabel: string;
+  assetManager: string;
+  noAssets: string;
+  useIntegrations: string;
+  dragToCanvas: string;
+  // Editor
+  clearFormat: string;
+  htmlMode: string;
+  mjmlMode: string;
+  // Component labels (all 28 block types)
+  componentHeading: string;
+  componentParagraph: string;
+  componentIcon: string;
+  componentNavMenu: string;
+  componentImageText: string;
+  componentProductCard: string;
+  componentQuote: string;
+  componentTable: string;
+  componentWrapper: string;
+  componentGroup: string;
+  componentHero: string;
+  componentSlider: string;
+  componentGallery: string;
+  componentFlexLayout: string;
+  componentGridLayout: string;
 }
 
 export interface FileManagerProvider {

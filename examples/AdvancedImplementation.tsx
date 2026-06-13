@@ -142,6 +142,7 @@ export default function AdvancedImplementation() {
         <BuilderXD
           ref={builderRef}
           mode="mjml"                    // 🔒 Locks to MJML — hides the HTML/MJML switcher
+          lang="en"                      // 🌐 Locks UI language to English — hides the language toggle
           initialTemplate={savedTemplate} // Pre-loads template from your DB
           fileManager={myFileManager}     // Custom image uploader
           uiConfig={myUIConfig}           // Custom UI visibility

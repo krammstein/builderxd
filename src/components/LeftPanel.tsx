@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import type { BlockType, BlockNode, UIConfig, TemplateMode } from '../types';
 import { Layout, Search, Trash2, ChevronUp, ChevronDown, Layers, FolderOpen, LayoutGrid } from 'lucide-react';
-import { componentRegistry } from './ComponentRegistry';
+import { getComponentRegistry } from './ComponentRegistry';
+import { useTranslation } from '../context/LanguageContext';
 
 interface LeftPanelProps {
   onAddComponent: (type: BlockType) => void;
@@ -33,6 +34,8 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
   onClearCanvas,
   uiConfig
 }) => {
+  const { t } = useTranslation();
+  const componentRegistry = getComponentRegistry(t);
   const [activeTab, setActiveTab] = useState<'components' | 'layers' | 'assets'>('components');
   const [searchQuery, setSearchQuery] = useState('');
   const [collapsedLayers, setCollapsedLayers] = useState<Record<string, boolean>>({});
@@ -135,7 +138,7 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
           className={`p-2 rounded-lg cursor-pointer transition-all border-none outline-none ${
             activeTab === 'components' ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text-primary'
           }`}
-          title="Componentes"
+          title={t('components')}
           id="tab-btn-components"
         >
           <LayoutGrid size={20} />
@@ -146,7 +149,7 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
           className={`p-2 rounded-lg cursor-pointer transition-all border-none outline-none ${
             activeTab === 'layers' ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text-primary'
           }`}
-          title="Capas / Layers"
+          title={t('layersLabel')}
           id="tab-btn-layers"
         >
           <Layers size={20} />
@@ -157,7 +160,7 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
           className={`p-2 rounded-lg cursor-pointer transition-all border-none outline-none ${
             activeTab === 'assets' ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text-primary'
           }`}
-          title="Recursos / Assets"
+          title={t('assetsLabel')}
           id="tab-btn-assets"
         >
           <FolderOpen size={20} />
@@ -170,14 +173,14 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
           <div className="p-4 flex flex-col overflow-y-auto flex-1 h-full gap-4">
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-text-primary">Librería de Componentes</h2>
+                <h2 className="text-sm font-semibold text-text-primary">{t('componentLibrary')}</h2>
                 {uiConfig?.showClearCanvas !== false && onClearCanvas && (
                   <button
                     onClick={onClearCanvas}
                     className="p-1 px-2 text-[10px] font-bold text-red-500 border border-red-500/20 bg-red-500/10 rounded-md cursor-pointer hover:bg-red-500 hover:text-white transition-all border-none shrink-0"
                     id="btn-clear-canvas"
                   >
-                    Limpiar
+                    {t('clearCanvas')}
                   </button>
                 )}
               </div>
@@ -190,7 +193,7 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
                       templateMode === 'html' ? 'bg-primary text-white' : 'text-text-secondary hover:text-text-primary'
                     }`}
                   >
-                    HTML
+                    {t('htmlMode')}
                   </button>
                   <button
                     onClick={() => setTemplateMode('mjml')}
@@ -198,7 +201,7 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
                       templateMode === 'mjml' ? 'bg-primary text-white' : 'text-text-secondary hover:text-text-primary'
                     }`}
                   >
-                    MJML
+                    {t('mjmlMode')}
                   </button>
                 </div>
               )}
@@ -207,7 +210,7 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
                 <Search size={14} className="text-text-muted shrink-0" />
                 <input
                   type="text"
-                  placeholder="Buscar componentes..."
+                  placeholder={t('searchComponents')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="bg-transparent border-none text-text-primary text-xs outline-none w-full"
@@ -239,10 +242,10 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
 
         {activeTab === 'layers' && (
           <div className="p-4 flex-1 flex flex-col overflow-hidden h-full">
-            <h2 className="text-sm font-semibold text-text-primary mb-3.5">Árbol de Capas</h2>
+            <h2 className="text-sm font-semibold text-text-primary mb-3.5">{t('layersTree')}</h2>
             <div className="flex-1 overflow-y-auto">
               {nodes.length === 0 ? (
-                <p className="text-xs text-text-muted text-center mt-5">Arrastra componentes al canvas central.</p>
+                <p className="text-xs text-text-muted text-center mt-5">{t('dragToCanvas')}</p>
               ) : (
                 <div className="flex flex-col">
                   {/* Collapsible Design node wrapper */}
@@ -261,11 +264,11 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
 
         {activeTab === 'assets' && (
           <div className="p-4 flex-1 flex flex-col overflow-hidden h-full">
-            <h2 className="text-sm font-semibold text-text-primary mb-3.5">Gestor de Recursos</h2>
+            <h2 className="text-sm font-semibold text-text-primary mb-3.5">{t('assetManager')}</h2>
             <div className="flex-1 flex flex-col items-center justify-center text-center p-5 text-text-muted gap-2">
               <FolderOpen size={36} className="text-text-muted/60" />
-              <p className="text-xs">No hay imágenes o recursos locales subidos aún.</p>
-              <span className="text-[10px] text-text-muted/50">Usa las integraciones del menú superior.</span>
+              <p className="text-xs">{t('noAssets')}</p>
+              <span className="text-[10px] text-text-muted/50">{t('useIntegrations')}</span>
             </div>
           </div>
         )}
