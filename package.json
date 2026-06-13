@@ -1,8 +1,15 @@
 {
-  "name": "builderxd",
+  "name": "@krammstein/builderxd",
   "version": "1.8.0",
   "type": "module",
   "main": "./dist/builderxd.umd.js",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/krammstein/builderxd.git"
+  },
   "module": "./dist/builderxd.es.js",
   "types": "./dist/src/index.d.ts",
   "exports": {
