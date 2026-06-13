@@ -10,30 +10,42 @@ import { compileToMJML, compileToHTML } from './utils/compiler';
 import { useTranslation } from './context/LanguageContext';
 import { useTheme } from './context/ThemeContext';
 import { X, Sparkles } from 'lucide-react';
+import { parseTemplateToNodes } from './utils/parser';
 
 export interface AppProps {
-  initialTemplate?: BlockNode[] | string;
-  responsive?: DeviceMode;
+  initialNodes?: BlockNode[];
   onSave?: (data: { nodes: BlockNode[]; mjml: string; html: string }) => void;
   onExport?: (data: { nodes: BlockNode[]; mjml: string; html: string }) => void;
   onTemplateChange?: (mjml: string, html: string) => void;
+  defaultMode?: 'mjml' | 'html';
   readOnly?: boolean;
-  theme?: {
-    primaryColor?: string;
-    primaryColorHover?: string;
-    accentColor?: string;
-    borderRadius?: number;
-    darkMode?: boolean;
+  uiConfig?: {
+    headerColor?: string;
+    logoUrl?: string;
+    showExportBtn?: boolean;
   };
   fileManagerProviders?: FileManagerProvider[];
   espIntegrations?: ESPIntegration[];
-  uiConfig?: UIConfig;
+  theme?: {
+    darkMode?: boolean;
+    primaryColor?: string;
+  };
   assetManagerComponent?: React.ReactNode;
-  confirmClearPrompt?: string;
-  googleFonts?: string[];
   videoManagerComponent?: React.ReactNode;
+  googleFonts?: string[];
+  ref?: React.Ref<any>;
 }
 
+export interface BuilderRef {
+  getNodes: () => BlockNode[];
+  setNodes: (nodes: BlockNode[]) => void;
+  getHTML: () => string;
+  getMJML: () => string;
+  toggleDarkMode: () => void;
+  importTemplate: (code: string, mode: 'mjml' | 'html') => void;
+  exportTemplate: (format: 'mjml' | 'html' | 'zip') => Promise<string>;
+  sendTest: (emails: string[]) => void;
+}
 
 const INITIAL_TEMPLATE: BlockNode[] = [
   {
@@ -162,43 +174,33 @@ const INITIAL_TEMPLATE: BlockNode[] = [
   }
 ];
 
-const App = forwardRef<any, AppProps>(({
-  initialTemplate,
-  responsive,
+export const BuilderXD = forwardRef<BuilderRef, AppProps>(({
+  initialNodes = [],
   onSave,
   onExport,
   onTemplateChange,
+  defaultMode = 'mjml',
   readOnly = false,
   theme,
   fileManagerProviders = [],
   espIntegrations = [],
   uiConfig,
   assetManagerComponent,
-  confirmClearPrompt,
+  videoManagerComponent,
   googleFonts
 }, ref) => {
   const { t } = useTranslation();
   const { setTheme } = useTheme();
 
   const getInitialNodes = (): BlockNode[] => {
-    if (!initialTemplate) return INITIAL_TEMPLATE;
-    if (typeof initialTemplate === 'string') {
-      try {
-        const parsed = JSON.parse(initialTemplate);
-        if (Array.isArray(parsed)) return parsed;
-      } catch (e) {
-        // Fallback
-      }
-      return INITIAL_TEMPLATE;
-    }
-    return initialTemplate;
+    return initialNodes.length > 0 ? initialNodes : INITIAL_TEMPLATE;
   };
 
   const [nodes, setNodes] = useState<BlockNode[]>(getInitialNodes);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [deviceMode, setDeviceMode] = useState<DeviceMode>(responsive || 'desktop');
+  const [deviceMode, setDeviceMode] = useState<DeviceMode>('desktop');
   const [isCodeDrawerOpen, setIsCodeDrawerOpen] = useState(false);
-  const [templateMode, setTemplateMode] = useState<TemplateMode>('mjml');
+  const [templateMode, setTemplateMode] = useState<TemplateMode>(defaultMode);
   const [isAssetManagerOpen, setIsAssetManagerOpen] = useState(false);
   const [currentAssetCallback, setCurrentAssetCallback] = useState<((url: string) => void) | null>(null);
 
@@ -212,29 +214,25 @@ const App = forwardRef<any, AppProps>(({
     }
   }, [theme?.darkMode, setTheme]);
 
-  // Expose API Imperativa via ref handle
+  // Expose methods to parent
   useImperativeHandle(ref, () => ({
-    undo: handleUndo,
-    redo: handleRedo,
-    getCode: () => ({
-      mjml: mjmlCode,
-      html: htmlCode,
-      mode: 'mjml'
-    }),
-    setCode: (code: string) => {
-      try {
-        const parsed = JSON.parse(code);
-        if (Array.isArray(parsed)) {
-          updateNodesAndHistory(parsed);
-        }
-      } catch (e) {
-        // Fallback or handle MJML
+    getNodes: () => nodes,
+    setNodes: (newNodes: BlockNode[]) => updateNodesAndHistory(newNodes),
+    getHTML: () => htmlCode,
+    getMJML: () => mjmlCode,
+    toggleDarkMode: () => setTheme(theme?.darkMode ? 'light' : 'dark'),
+    importTemplate: (code: string, mode: 'mjml' | 'html') => {
+      const parsedNodes = parseTemplateToNodes(code, mode);
+      if (parsedNodes && parsedNodes.length > 0) {
+        updateNodesAndHistory(parsedNodes);
+      } else {
+        console.warn('BuilderXD: No valid nodes could be extracted from the imported code.');
       }
     },
     exportTemplate: async (format: 'mjml' | 'html' | 'zip') => {
       if (format === 'mjml') return mjmlCode;
       if (format === 'html') return htmlCode;
-      return htmlCode;
+      return htmlCode; // zip not implemented natively yet
     },
     sendTest: (emails: string[]) => {
       setTestEmails(emails.join(', '));
