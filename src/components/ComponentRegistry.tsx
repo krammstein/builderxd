@@ -16,7 +16,14 @@ import {
   Star,
   FileText,
   User,
-  ShoppingBag
+  ShoppingBag,
+  Table,
+  Box,
+  LayoutTemplate,
+  Sliders,
+  Grid,
+  AlignHorizontalSpaceBetween,
+  LayoutGrid
 } from 'lucide-react';
 import type { BlockType, TemplateMode } from '../types';
 
@@ -47,5 +54,13 @@ export const componentRegistry: ComponentConfig[] = [
   { type: 'nav_menu', label: 'Menú Nav', icon: <Menu size={24} />, allowedModes: ['html', 'mjml'] },
   { type: 'image_text', label: 'Img + Texto', icon: <FileText size={24} />, allowedModes: ['html', 'mjml'] },
   { type: 'product_card', label: 'Producto', icon: <ShoppingBag size={24} />, allowedModes: ['html', 'mjml'] },
-  { type: 'quote', label: 'Cita', icon: <User size={24} />, allowedModes: ['html', 'mjml'] }
+  { type: 'quote', label: 'Cita', icon: <User size={24} />, allowedModes: ['html', 'mjml'] },
+  { type: 'table', label: 'Tabla', icon: <Table size={24} />, allowedModes: ['html'] },
+  { type: 'wrapper', label: 'Wrapper', icon: <Box size={24} />, allowedModes: ['mjml'] },
+  { type: 'group', label: 'Grupo', icon: <Columns size={24} />, allowedModes: ['mjml'] },
+  { type: 'hero', label: 'Hero', icon: <LayoutTemplate size={24} />, allowedModes: ['mjml'] },
+  { type: 'slider', label: 'Slider', icon: <Sliders size={24} />, allowedModes: ['html'] },
+  { type: 'gallery', label: 'Galería', icon: <Grid size={24} />, allowedModes: ['html'] },
+  { type: 'flex_layout', label: 'Flex Layout', icon: <AlignHorizontalSpaceBetween size={24} />, allowedModes: ['html'] },
+  { type: 'grid_layout', label: 'Grid Layout', icon: <LayoutGrid size={24} />, allowedModes: ['html'] }
 ];

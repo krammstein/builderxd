@@ -18,7 +18,15 @@ export type BlockType =
   | 'nav_menu'
   | 'image_text'
   | 'product_card'
-  | 'quote';
+  | 'quote'
+  | 'table'
+  | 'wrapper'
+  | 'group'
+  | 'hero'
+  | 'slider'
+  | 'gallery'
+  | 'flex_layout'
+  | 'grid_layout';
 
 export interface BlockNode {
   id: string;

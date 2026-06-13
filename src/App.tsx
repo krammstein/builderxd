@@ -174,7 +174,7 @@ const INITIAL_TEMPLATE: BlockNode[] = [
   }
 ];
 
-export const BuilderXD = forwardRef<BuilderRef, AppProps>(({
+const App = forwardRef<BuilderRef, AppProps>(({
   initialNodes = [],
   onSave,
   onExport,
@@ -397,7 +397,7 @@ export const BuilderXD = forwardRef<BuilderRef, AppProps>(({
 
   // Asynchronous Compiler Web Worker State
   const [mjmlCode, setMjmlCode] = useState(() => compileToMJML(getInitialNodes()));
-  const [htmlCode, setHtmlCode] = useState(() => compileToHTML(getInitialNodes(), null, responsive === 'mobile'));
+  const [htmlCode, setHtmlCode] = useState(() => compileToHTML(getInitialNodes(), null, deviceMode === 'mobile'));
   const workerRef = useRef<Worker | null>(null);
 
   useEffect(() => {
@@ -593,6 +593,57 @@ export const BuilderXD = forwardRef<BuilderRef, AppProps>(({
           backgroundColor: '#f9f9f9',
           borderRadius: 4,
           padding: '15px'
+        };
+      case 'table':
+        return {
+          rows: 3,
+          cols: 3,
+          showHeaders: true,
+          borderColor: '#e5e7eb',
+          padding: '10px',
+          align: 'center',
+          width: '100%'
+        };
+      case 'wrapper':
+        return { backgroundColor: 'transparent', padding: '20px 0px' };
+      case 'group':
+        return { width: '100%', verticalAlign: 'top' };
+      case 'hero':
+        return {
+          mode: 'fluid-height',
+          backgroundColor: '#000000',
+          backgroundImageUrl: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800&auto=format&fit=crop&q=60',
+          backgroundWidth: '600px',
+          backgroundHeight: '400px',
+          padding: '100px 0px'
+        };
+      case 'slider':
+        return {
+          images: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=60,https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800&auto=format&fit=crop&q=60',
+          delay: 3000,
+          slidesPerView: 1,
+          padding: '0px'
+        };
+      case 'gallery':
+        return {
+          images: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=60,https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800&auto=format&fit=crop&q=60',
+          columns: 3,
+          gap: 10,
+          padding: '10px'
+        };
+      case 'flex_layout':
+        return {
+          direction: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 16,
+          padding: '10px'
+        };
+      case 'grid_layout':
+        return {
+          columns: 2,
+          gap: 16,
+          padding: '10px'
         };
       default:
         return {};
@@ -875,7 +926,7 @@ export const BuilderXD = forwardRef<BuilderRef, AppProps>(({
     const insertRecursively = (list: BlockNode[]): BlockNode[] => {
       return list.map((node) => {
         if (node.id === targetId) {
-          if (node.type === 'column') {
+          if (['column', 'wrapper', 'group', 'hero', 'flex_layout', 'grid_layout'].includes(node.type)) {
             node.children = [...(node.children || []), newBlock];
             inserted = true;
           } else if (node.type === 'section') {
@@ -895,7 +946,7 @@ export const BuilderXD = forwardRef<BuilderRef, AppProps>(({
           }
         } else if (node.children) {
           const childIndex = node.children.findIndex((child) => child.id === targetId);
-          if (childIndex !== -1 && node.type === 'column') {
+          if (childIndex !== -1 && ['column', 'wrapper', 'group', 'hero', 'flex_layout', 'grid_layout'].includes(node.type)) {
             const newChildren = [...node.children];
             newChildren.splice(childIndex + 1, 0, newBlock);
             node.children = newChildren;

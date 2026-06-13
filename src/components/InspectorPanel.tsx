@@ -188,36 +188,13 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
         );
 
       case 'text':
-        return (
-          <div className="flex flex-col gap-4">
-            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">Propiedades de Texto Libre</h3>
-            {!isMobileTab && (
-              <div className="flex flex-col gap-1.5 builder-rich-text-editor">
-                {renderLabel('Contenido Enriquecido', 'content')}
-                <RichTextEditor
-                  value={p.content || ''}
-                  onChange={(val) => handleChange('content', val)}
-                  disabled={readOnly}
-                />
-              </div>
-            )}
-            <div className="flex flex-col gap-1.5">
-              <PaddingEditor value={p.padding || '10px 20px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <MarginEditor value={p.margin || '0px'} onChange={(val) => handleChange('margin', val)} disabled={readOnly} />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <BorderRadiusEditor value={p.borderRadius || '0px'} onChange={(val) => handleChange('borderRadius', val)} disabled={readOnly} />
-            </div>
-          </div>
-        );
-
       case 'heading':
       case 'paragraph':
         return (
           <div className="flex flex-col gap-4">
-            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">Propiedades de Texto</h3>
+            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">
+              Propiedades de {selectedNode.type === 'heading' ? 'Encabezado' : selectedNode.type === 'text' ? 'Texto Libre' : 'Párrafo'}
+            </h3>
             {selectedNode.type === 'heading' && (
               <div className="flex flex-col gap-1.5">
                 {renderLabel('Nivel de Encabezado', 'level')}
@@ -233,12 +210,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                   ]}
                   onChange={(val) => {
                     const sizeMap: Record<string, string> = {
-                      h1: '32px',
-                      h2: '24px',
-                      h3: '20px',
-                      h4: '18px',
-                      h5: '16px',
-                      h6: '14px'
+                      h1: '32px', h2: '24px', h3: '20px', h4: '18px', h5: '16px', h6: '14px'
                     };
                     handleChange('level', val);
                     handleChange('fontSize', sizeMap[val] || '24px');
@@ -250,17 +222,26 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             {!isMobileTab && (
               <div className="flex flex-col gap-1.5">
                 {renderLabel('Contenido', 'content')}
-                <textarea
-                  value={p.content || ''}
-                  onChange={(e) => {
-                    // Strip HTML tags to ensure plain text only
-                    const cleaned = e.target.value.replace(/<\/?[^>]+(>|$)/g, "");
-                    handleChange('content', cleaned);
-                  }}
-                  disabled={readOnly}
-                  className="bg-bg-hover border border-border-color text-text-primary p-2 px-3 rounded-md text-xs outline-none transition-all focus:border-primary w-full disabled:opacity-55"
-                  rows={4}
-                />
+                {selectedNode.type === 'paragraph' || selectedNode.type === 'text' ? (
+                  <div className="builder-rich-text-editor">
+                    <RichTextEditor
+                      value={p.content || ''}
+                      onChange={(val) => handleChange('content', val)}
+                      disabled={readOnly}
+                    />
+                  </div>
+                ) : (
+                  <textarea
+                    value={p.content || ''}
+                    onChange={(e) => {
+                      const cleaned = e.target.value.replace(/<\/?[^>]+(>|$)/g, "");
+                      handleChange('content', cleaned);
+                    }}
+                    disabled={readOnly}
+                    className="bg-bg-hover border border-border-color text-text-primary p-2 px-3 rounded-md text-xs outline-none transition-all focus:border-primary w-full disabled:opacity-55"
+                    rows={4}
+                  />
+                )}
               </div>
             )}
             <div className="flex flex-col gap-1.5">
@@ -278,56 +259,41 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                   type="button"
                   onClick={() => handleChange('fontWeight', p.fontWeight === 'bold' || p.fontWeight === '700' ? 'normal' : 'bold')}
                   className={`flex-1 text-center py-1 text-xs font-bold rounded-md cursor-pointer transition-all border-none ${
-                    p.fontWeight === 'bold' || p.fontWeight === '700' ? 'bg-primary text-white' : 'text-text-secondary hover:text-text-primary hover:bg-bg-panel'
+                    p.fontWeight === 'bold' || p.fontWeight === '700' ? 'bg-bg-panel text-primary shadow-sm' : 'text-text-secondary bg-transparent hover:text-text-primary'
                   }`}
-                  style={{ fontWeight: 'bold' }}
+                  disabled={readOnly}
                 >
                   B
                 </button>
                 <button
                   type="button"
                   onClick={() => handleChange('fontStyle', p.fontStyle === 'italic' ? 'normal' : 'italic')}
-                  className={`flex-1 text-center py-1 text-xs font-bold rounded-md cursor-pointer transition-all border-none ${
-                    p.fontStyle === 'italic' ? 'bg-primary text-white' : 'text-text-secondary hover:text-text-primary hover:bg-bg-panel'
+                  className={`flex-1 text-center py-1 text-xs italic rounded-md cursor-pointer transition-all border-none ${
+                    p.fontStyle === 'italic' ? 'bg-bg-panel text-primary shadow-sm' : 'text-text-secondary bg-transparent hover:text-text-primary'
                   }`}
-                  style={{ fontStyle: 'italic' }}
+                  disabled={readOnly}
                 >
                   I
                 </button>
                 <button
                   type="button"
                   onClick={() => handleChange('textDecoration', p.textDecoration === 'underline' ? 'none' : 'underline')}
-                  className={`flex-1 text-center py-1 text-xs font-bold rounded-md cursor-pointer transition-all border-none ${
-                    p.textDecoration === 'underline' ? 'bg-primary text-white' : 'text-text-secondary hover:text-text-primary hover:bg-bg-panel'
+                  className={`flex-1 text-center py-1 text-xs underline rounded-md cursor-pointer transition-all border-none ${
+                    p.textDecoration === 'underline' ? 'bg-bg-panel text-primary shadow-sm' : 'text-text-secondary bg-transparent hover:text-text-primary'
                   }`}
-                  style={{ textDecoration: 'underline' }}
+                  disabled={readOnly}
                 >
                   U
                 </button>
               </div>
             </div>
             <div className="flex flex-col gap-1.5">
-              {renderLabel('Peso de Fuente', 'fontWeight')}
-              <CustomSelect
-                value={p.fontWeight || '400'}
-                options={[
-                  { label: 'Fino (300)', value: '300' },
-                  { label: 'Normal (400)', value: '400' },
-                  { label: 'Seminegrita (600)', value: '600' },
-                  { label: 'Negrita (700)', value: '700' },
-                  { label: 'Extra Negrita (900)', value: '900' }
-                ]}
-                onChange={(val) => handleChange('fontWeight', val)}
-                disabled={readOnly}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              {renderLabel('Color de Texto', 'color')}
-              <ColorPicker value={p.color || '#333333'} onChange={(val) => handleChange('color', val)} disabled={readOnly} />
-            </div>
-            <div className="flex flex-col gap-1.5">
               {renderLabel('Alineación', 'align')}
-              <AlignButtonGroup value={p.align || 'left'} onChange={(val) => handleChange('align', val)} disabled={readOnly} />
+              <AlignButtonGroup value={p.align || 'left'} options={['left', 'center', 'right', 'justify']} onChange={(val) => handleChange('align', val as any)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Color', 'color')}
+              <ColorPicker value={p.color || '#1a1a1a'} onChange={(val) => handleChange('color', val)} disabled={readOnly} />
             </div>
             <div className="flex flex-col gap-1.5">
               <PaddingEditor value={p.padding || '10px 20px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
@@ -990,6 +956,277 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             </div>
             <div className="flex flex-col gap-1.5">
               <MarginEditor value={p.margin || '0px'} onChange={(val) => handleChange('margin', val)} disabled={readOnly} />
+            </div>
+          </div>
+        );
+
+      case 'table':
+        return (
+          <div className="flex flex-col gap-4">
+            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">Propiedades de Tabla</h3>
+            {!isMobileTab && (
+              <>
+                <div className="flex flex-col gap-1.5">
+                  {renderLabel('Filas', 'rows')}
+                  <NumberStepper value={p.rows || 3} onChange={(val) => handleChange('rows', val)} min={1} max={50} disabled={readOnly} />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  {renderLabel('Columnas', 'cols')}
+                  <NumberStepper value={p.cols || 3} onChange={(val) => handleChange('cols', val)} min={1} max={12} disabled={readOnly} />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={p.showHeaders !== false}
+                      onChange={(e) => handleChange('showHeaders', e.target.checked)}
+                      disabled={readOnly}
+                      className="accent-primary"
+                    />
+                    <span className="text-xs font-semibold text-text-secondary">Mostrar Cabeceras (th)</span>
+                  </label>
+                </div>
+              </>
+            )}
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Alineación', 'align')}
+              <AlignButtonGroup value={p.align || 'center'} options={['left', 'center', 'right']} onChange={(val) => handleChange('align', val as any)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Color de Borde', 'borderColor')}
+              <ColorPicker value={p.borderColor || '#e5e7eb'} onChange={(val) => handleChange('borderColor', val)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <PaddingEditor value={p.padding || '10px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
+            </div>
+          </div>
+        );
+
+      case 'wrapper':
+        return (
+          <div className="flex flex-col gap-4">
+            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">Propiedades de Wrapper</h3>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Color de Fondo', 'backgroundColor')}
+              <ColorPicker value={p.backgroundColor || 'transparent'} onChange={(val) => handleChange('backgroundColor', val)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <PaddingEditor value={p.padding || '20px 0px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
+            </div>
+          </div>
+        );
+
+      case 'group':
+        return (
+          <div className="flex flex-col gap-4">
+            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">Propiedades de Grupo</h3>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Alineación Vertical', 'verticalAlign')}
+              <CustomSelect
+                value={p.verticalAlign || 'top'}
+                options={[
+                  { label: 'Superior', value: 'top' },
+                  { label: 'Medio', value: 'middle' },
+                  { label: 'Inferior', value: 'bottom' }
+                ]}
+                onChange={(val) => handleChange('verticalAlign', val)}
+                disabled={readOnly}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Ancho', 'width')}
+              <input
+                type="text"
+                value={p.width || '100%'}
+                onChange={(e) => handleChange('width', e.target.value)}
+                disabled={readOnly}
+                className="bg-bg-hover border border-border-color text-text-primary p-2 px-3 rounded-md text-xs outline-none transition-all focus:border-primary w-full disabled:opacity-55"
+              />
+            </div>
+          </div>
+        );
+
+      case 'hero':
+        return (
+          <div className="flex flex-col gap-4">
+            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">Propiedades de Hero</h3>
+            {!isMobileTab && (
+              <>
+                <div className="flex flex-col gap-1.5">
+                  {renderLabel('Modo', 'mode')}
+                  <CustomSelect
+                    value={p.mode || 'fluid-height'}
+                    options={[
+                      { label: 'Altura Fluida', value: 'fluid-height' },
+                      { label: 'Altura Fija', value: 'fixed-height' }
+                    ]}
+                    onChange={(val) => handleChange('mode', val)}
+                    disabled={readOnly}
+                  />
+                </div>
+                {renderAssetField('Imagen de Fondo (URL)', 'backgroundImageUrl')}
+                <div className="flex gap-2">
+                  <div className="flex-1 flex flex-col gap-1.5">
+                    {renderLabel('Ancho Fondo', 'backgroundWidth')}
+                    <input
+                      type="text"
+                      value={p.backgroundWidth || '600px'}
+                      onChange={(e) => handleChange('backgroundWidth', e.target.value)}
+                      disabled={readOnly}
+                      className="bg-bg-hover border border-border-color text-text-primary p-2 px-3 rounded-md text-xs outline-none transition-all focus:border-primary w-full disabled:opacity-55"
+                    />
+                  </div>
+                  <div className="flex-1 flex flex-col gap-1.5">
+                    {renderLabel('Alto Fondo', 'backgroundHeight')}
+                    <input
+                      type="text"
+                      value={p.backgroundHeight || '400px'}
+                      onChange={(e) => handleChange('backgroundHeight', e.target.value)}
+                      disabled={readOnly}
+                      className="bg-bg-hover border border-border-color text-text-primary p-2 px-3 rounded-md text-xs outline-none transition-all focus:border-primary w-full disabled:opacity-55"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Color de Fondo', 'backgroundColor')}
+              <ColorPicker value={p.backgroundColor || '#000000'} onChange={(val) => handleChange('backgroundColor', val)} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <PaddingEditor value={p.padding || '100px 0px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
+            </div>
+          </div>
+        );
+
+      case 'slider':
+        return (
+          <div className="flex flex-col gap-4">
+            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">Slider (Swiper)</h3>
+            {!isMobileTab && (
+              <div className="flex flex-col gap-1.5">
+                {renderLabel('Imágenes (URLs por comas)', 'images')}
+                <textarea
+                  value={p.images || ''}
+                  onChange={(e) => handleChange('images', e.target.value)}
+                  disabled={readOnly}
+                  className="bg-bg-hover border border-border-color text-text-primary p-2 px-3 rounded-md text-xs outline-none transition-all focus:border-primary w-full disabled:opacity-55"
+                  rows={4}
+                  placeholder="URL1, URL2, URL3"
+                />
+              </div>
+            )}
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Auto-play Delay (ms)', 'delay')}
+              <NumberStepper value={p.delay || 3000} onChange={(val) => handleChange('delay', val)} min={1000} max={10000} step={500} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Diapositivas Visibles', 'slidesPerView')}
+              <NumberStepper value={p.slidesPerView || 1} onChange={(val) => handleChange('slidesPerView', val)} min={1} max={5} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <PaddingEditor value={p.padding || '0px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
+            </div>
+          </div>
+        );
+
+      case 'gallery':
+        return (
+          <div className="flex flex-col gap-4">
+            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">Galería (PhotoSwipe)</h3>
+            {!isMobileTab && (
+              <div className="flex flex-col gap-1.5">
+                {renderLabel('Imágenes (URLs por comas)', 'images')}
+                <textarea
+                  value={p.images || ''}
+                  onChange={(e) => handleChange('images', e.target.value)}
+                  disabled={readOnly}
+                  className="bg-bg-hover border border-border-color text-text-primary p-2 px-3 rounded-md text-xs outline-none transition-all focus:border-primary w-full disabled:opacity-55"
+                  rows={4}
+                  placeholder="URL1, URL2, URL3"
+                />
+              </div>
+            )}
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Columnas', 'columns')}
+              <NumberStepper value={p.columns || 3} onChange={(val) => handleChange('columns', val)} min={1} max={6} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Espaciado (Gap)', 'gap')}
+              <NumberStepper value={p.gap || 10} onChange={(val) => handleChange('gap', val)} min={0} max={50} unit="px" disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <PaddingEditor value={p.padding || '10px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
+            </div>
+          </div>
+        );
+
+      case 'flex_layout':
+        return (
+          <div className="flex flex-col gap-4">
+            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">Flex Layout</h3>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Dirección', 'direction')}
+              <CustomSelect
+                value={p.direction || 'row'}
+                options={[
+                  { label: 'Fila (Row)', value: 'row' },
+                  { label: 'Columna (Col)', value: 'column' }
+                ]}
+                onChange={(val) => handleChange('direction', val)}
+                disabled={readOnly}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Alineación Principal', 'justifyContent')}
+              <CustomSelect
+                value={p.justifyContent || 'flex-start'}
+                options={[
+                  { label: 'Inicio', value: 'flex-start' },
+                  { label: 'Centro', value: 'center' },
+                  { label: 'Separación', value: 'space-between' }
+                ]}
+                onChange={(val) => handleChange('justifyContent', val)}
+                disabled={readOnly}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Alineación Transversal', 'alignItems')}
+              <CustomSelect
+                value={p.alignItems || 'flex-start'}
+                options={[
+                  { label: 'Inicio', value: 'flex-start' },
+                  { label: 'Centro', value: 'center' },
+                  { label: 'Estirar', value: 'stretch' }
+                ]}
+                onChange={(val) => handleChange('alignItems', val)}
+                disabled={readOnly}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Espaciado (Gap)', 'gap')}
+              <NumberStepper value={p.gap || 16} onChange={(val) => handleChange('gap', val)} min={0} max={100} unit="px" disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <PaddingEditor value={p.padding || '10px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
+            </div>
+          </div>
+        );
+
+      case 'grid_layout':
+        return (
+          <div className="flex flex-col gap-4">
+            <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted mt-2">Grid Layout</h3>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Columnas', 'columns')}
+              <NumberStepper value={p.columns || 2} onChange={(val) => handleChange('columns', val)} min={1} max={12} disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {renderLabel('Espaciado (Gap)', 'gap')}
+              <NumberStepper value={p.gap || 16} onChange={(val) => handleChange('gap', val)} min={0} max={100} unit="px" disabled={readOnly} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <PaddingEditor value={p.padding || '10px'} onChange={(val) => handleChange('padding', val)} disabled={readOnly} />
             </div>
           </div>
         );

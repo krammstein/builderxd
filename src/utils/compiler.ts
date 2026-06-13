@@ -226,6 +226,46 @@ ${indent}    <mj-text font-weight="bold" align="center">- ${author}</mj-text>
 ${indent}  </mj-column>
 ${indent}</mj-section>\n`;
       }
+      case 'wrapper': {
+        const bg = props.backgroundColor ? ` background-color="${props.backgroundColor}"` : '';
+        const pad = props.padding ? ` padding="${props.padding}"` : '';
+        let content = `${indent}<mj-wrapper${bg}${pad}>\n`;
+        if (node.children) {
+          node.children.forEach((child) => {
+            content += renderNode(child, indent + '  ');
+          });
+        }
+        content += `${indent}</mj-wrapper>\n`;
+        return content;
+      }
+      case 'group': {
+        const width = props.width ? ` width="${props.width}"` : '';
+        const vAlign = props.verticalAlign ? ` vertical-align="${props.verticalAlign}"` : '';
+        let content = `${indent}<mj-group${width}${vAlign}>\n`;
+        if (node.children) {
+          node.children.forEach((child) => {
+            content += renderNode(child, indent + '  ');
+          });
+        }
+        content += `${indent}</mj-group>\n`;
+        return content;
+      }
+      case 'hero': {
+        const mode = props.mode ? ` mode="${props.mode}"` : '';
+        const bgUrl = props.backgroundImageUrl ? ` background-url="${props.backgroundImageUrl}"` : '';
+        const bgColor = props.backgroundColor ? ` background-color="${props.backgroundColor}"` : '';
+        const bgW = props.backgroundWidth ? ` background-width="${props.backgroundWidth}"` : '';
+        const bgH = props.backgroundHeight ? ` background-height="${props.backgroundHeight}"` : '';
+        const pad = props.padding ? ` padding="${props.padding}"` : '';
+        let content = `${indent}<mj-hero${mode}${bgUrl}${bgColor}${bgW}${bgH}${pad}>\n`;
+        if (node.children) {
+          node.children.forEach((child) => {
+            content += renderNode(child, indent + '  ');
+          });
+        }
+        content += `${indent}</mj-hero>\n`;
+        return content;
+      }
       default:
         return '';
     }
@@ -579,6 +619,145 @@ ${indent}</table>`;
           </div>
         `;
       }
+      case 'table': {
+        const rows = p.rows || 3;
+        const cols = p.cols || 3;
+        const showHeaders = p.showHeaders !== false;
+        const borderColor = getResponsiveStyle(node, 'borderColor', '#e5e7eb');
+        const padding = getResponsiveStyle(node, 'padding', '10px');
+        const align = getResponsiveStyle(node, 'align', 'center');
+        const width = getResponsiveStyle(node, 'width', '100%');
+        
+        let tableHtml = `<table style="width: 100%; border-collapse: collapse;">`;
+        for (let i = 0; i < rows; i++) {
+          tableHtml += `<tr>`;
+          for (let j = 0; j < cols; j++) {
+            const isHeader = i === 0 && showHeaders;
+            const tag = isHeader ? 'th' : 'td';
+            const bg = isHeader ? '#f3f4f6' : 'transparent';
+            const weight = isHeader ? 'bold' : 'normal';
+            tableHtml += `<${tag} style="border: 1px solid ${borderColor}; padding: 8px; background-color: ${bg}; font-weight: ${weight}; text-align: ${align};">Celda ${i+1}-${j+1}</${tag}>`;
+          }
+          tableHtml += `</tr>`;
+        }
+        tableHtml += `</table>`;
+
+        return `
+          <div data-id="${node.id}" class="builder-element${isSelectedClass}" style="padding: ${padding}; box-sizing: border-box; width: ${width}; margin: ${align === 'center' ? '0 auto' : align === 'right' ? '0 0 0 auto' : '0 auto 0 0'};">
+            ${tableHtml}
+          </div>
+        `;
+      }
+      case 'wrapper': {
+        const bg = getResponsiveStyle(node, 'backgroundColor', 'transparent');
+        const padding = getResponsiveStyle(node, 'padding', '20px 0px');
+        let childrenHtml = '';
+        if (node.children) {
+          childrenHtml = node.children.map(renderNode).join('');
+        }
+        return `
+          <div data-id="${node.id}" class="builder-element${isSelectedClass}" style="background-color: ${bg}; padding: ${padding}; box-sizing: border-box; width: 100%;">
+            ${childrenHtml}
+          </div>
+        `;
+      }
+      case 'group': {
+        const width = getResponsiveStyle(node, 'width', '100%');
+        const vAlign = getResponsiveStyle(node, 'verticalAlign', 'top');
+        const alignMap: any = { top: 'flex-start', middle: 'center', bottom: 'flex-end' };
+        let childrenHtml = '';
+        if (node.children) {
+          childrenHtml = node.children.map(renderNode).join('');
+        }
+        return `
+          <div data-id="${node.id}" class="builder-element${isSelectedClass}" style="display: flex; flex-direction: row; flex-wrap: wrap; align-items: ${alignMap[vAlign] || 'flex-start'}; width: ${width}; box-sizing: border-box;">
+            ${childrenHtml}
+          </div>
+        `;
+      }
+      case 'hero': {
+        const bg = getResponsiveStyle(node, 'backgroundColor', '#000000');
+        const bgUrl = getResponsiveStyle(node, 'backgroundImageUrl', '');
+        const padding = getResponsiveStyle(node, 'padding', '100px 0px');
+        const bgHeight = getResponsiveStyle(node, 'backgroundHeight', '400px');
+        let childrenHtml = '';
+        if (node.children) {
+          childrenHtml = node.children.map(renderNode).join('');
+        }
+        return `
+          <div data-id="${node.id}" class="builder-element${isSelectedClass}" style="background-color: ${bg}; background-image: url('${bgUrl}'); background-size: cover; background-position: center; padding: ${padding}; min-height: ${bgHeight}; box-sizing: border-box; width: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+            ${childrenHtml}
+          </div>
+        `;
+      }
+      case 'flex_layout': {
+        const dir = getResponsiveStyle(node, 'direction', 'row');
+        const jc = getResponsiveStyle(node, 'justifyContent', 'flex-start');
+        const ai = getResponsiveStyle(node, 'alignItems', 'flex-start');
+        const gap = getResponsiveStyle(node, 'gap', 16);
+        const padding = getResponsiveStyle(node, 'padding', '10px');
+        let childrenHtml = '';
+        if (node.children) {
+          childrenHtml = node.children.map(renderNode).join('');
+        }
+        return `
+          <div data-id="${node.id}" class="builder-element${isSelectedClass}" style="display: flex; flex-direction: ${dir}; justify-content: ${jc}; align-items: ${ai}; gap: ${gap}px; padding: ${padding}; box-sizing: border-box; width: 100%;">
+            ${childrenHtml}
+          </div>
+        `;
+      }
+      case 'grid_layout': {
+        const cols = getResponsiveStyle(node, 'columns', 2);
+        const gap = getResponsiveStyle(node, 'gap', 16);
+        const padding = getResponsiveStyle(node, 'padding', '10px');
+        let childrenHtml = '';
+        if (node.children) {
+          childrenHtml = node.children.map(renderNode).join('');
+        }
+        return `
+          <div data-id="${node.id}" class="builder-element${isSelectedClass}" style="display: grid; grid-template-columns: repeat(${cols}, 1fr); gap: ${gap}px; padding: ${padding}; box-sizing: border-box; width: 100%;">
+            ${childrenHtml}
+          </div>
+        `;
+      }
+      case 'slider': {
+        const imagesStr = getResponsiveStyle(node, 'images', '');
+        const images = imagesStr ? imagesStr.split(',').map((u:string) => u.trim()).filter(Boolean) : [];
+        const padding = getResponsiveStyle(node, 'padding', '0px');
+        
+        let sliderHtml = '<div style="display: flex; overflow-x: auto; gap: 10px; padding-bottom: 10px;">';
+        images.forEach((img: string) => {
+          sliderHtml += `<img src="${img}" style="height: 200px; object-fit: cover; border-radius: 8px; flex-shrink: 0;" />`;
+        });
+        if (images.length === 0) sliderHtml += '<div style="padding: 20px; background: #eee; width: 100%; text-align: center;">Agrega imágenes al slider</div>';
+        sliderHtml += '</div>';
+
+        return `
+          <div data-id="${node.id}" class="builder-element${isSelectedClass}" style="padding: ${padding}; box-sizing: border-box; width: 100%;">
+            ${sliderHtml}
+          </div>
+        `;
+      }
+      case 'gallery': {
+        const imagesStr = getResponsiveStyle(node, 'images', '');
+        const images = imagesStr ? imagesStr.split(',').map((u:string) => u.trim()).filter(Boolean) : [];
+        const padding = getResponsiveStyle(node, 'padding', '10px');
+        const cols = getResponsiveStyle(node, 'columns', 3);
+        const gap = getResponsiveStyle(node, 'gap', 10);
+        
+        let galleryHtml = `<div style="display: grid; grid-template-columns: repeat(${cols}, 1fr); gap: ${gap}px;">`;
+        images.forEach((img: string) => {
+          galleryHtml += `<img src="${img}" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px;" />`;
+        });
+        if (images.length === 0) galleryHtml += '<div style="padding: 20px; background: #eee; grid-column: 1 / -1; text-align: center;">Agrega imágenes a la galería</div>';
+        galleryHtml += '</div>';
+
+        return `
+          <div data-id="${node.id}" class="builder-element${isSelectedClass}" style="padding: ${padding}; box-sizing: border-box; width: 100%;">
+            ${galleryHtml}
+          </div>
+        `;
+      }
       default:
         return '';
     }
@@ -826,9 +1005,6 @@ ${fontLinks}
             // Check if it is a text-editing node
             const id = selected.getAttribute('data-id');
             const editableElements = selected.hasAttribute('data-prop') ? [selected] : Array.from(selected.querySelectorAll('[data-prop]'));
-            const isText = editableElements.length > 0;
-            let formatRow = document.getElementById('tb-format-row');
-
             if (isText) {
               editableElements.forEach(target => {
                 target.setAttribute('contenteditable', 'true');
@@ -853,94 +1029,6 @@ ${fontLinks}
                   });
                 }
               });
-
-              const isButton = id && id.startsWith('button-');
-              const isTextFree = id && id.startsWith('text-');
-
-              if (!formatRow && !isButton && !isTextFree) {
-                formatRow = document.createElement('div');
-                formatRow.id = 'tb-format-row';
-                formatRow.style.cssText = 'display: flex; gap: 4px; align-items: center; border-left: 1px solid #374151; padding-left: 4px; margin-left: 2px;';
-                toolbar.appendChild(formatRow);
-              }
-
-              if (!isButton && !isTextFree) {
-                // Apply styles to the focused editable element, or the first one
-                let activeTarget = editableElements[0];
-                const activeEl = document.activeElement;
-                if (activeEl && editableElements.includes(activeEl)) {
-                  activeTarget = activeEl;
-                }
-
-                const isB = activeTarget.style.fontWeight === 'bold' || activeTarget.style.fontWeight === '700';
-                const isI = activeTarget.style.fontStyle === 'italic';
-                const isU = activeTarget.style.textDecoration.includes('underline');
-                const textAlign = activeTarget.style.textAlign || 'left';
-                const activeFont = activeTarget.style.fontFamily || 'Arial';
-                const activeSize = activeTarget.style.fontSize || '16px';
-
-                const fontsList = ['Arial', 'Georgia', 'Verdana', 'Tahoma', 'Times New Roman', 'Courier New', 'Trebuchet MS', 'Inter', 'Roboto', 'Outfit', 'Poppins', 'Lato', 'Montserrat', 'Open Sans', 'Nunito', 'Raleway', 'Playfair Display'];
-                const fontOptions = fontsList.map(f => '<option value="' + f + '"' + (activeFont.includes(f) ? ' selected' : '') + '>' + f + '</option>').join('');
-
-                formatRow.innerHTML = 
-                  '<button type="button" class="tb-btn' + (isB ? ' active' : '') + '" id="tb-bold" style="font-weight:bold;">B</button>' +
-                  '<button type="button" class="tb-btn' + (isI ? ' active' : '') + '" id="tb-italic" style="font-style:italic;">I</button>' +
-                  '<button type="button" class="tb-btn' + (isU ? ' active' : '') + '" id="tb-underline" style="text-decoration:underline;">U</button>' +
-                  '<select id="tb-font-family" style="background:#374151;color:white;border:1px solid #4b5563;font-size:10px;border-radius:3px;padding:2px 4px;max-width:85px;outline:none;cursor:pointer;">' + fontOptions + '</select>' +
-                  '<input type="text" id="tb-font-size" style="background:#374151;color:white;border:1px solid #4b5563;font-size:10px;border-radius:3px;padding:2px 4px;width:38px;outline:none;text-align:center;" value="' + activeSize + '" />' +
-                  '<button type="button" class="tb-btn' + (textAlign === 'left' ? ' active' : '') + '" id="tb-align-left" title="Izquierda">⬅</button>' +
-                  '<button type="button" class="tb-btn' + (textAlign === 'center' ? ' active' : '') + '" id="tb-align-center" title="Centro">↔</button>' +
-                  '<button type="button" class="tb-btn' + (textAlign === 'right' ? ' active' : '') + '" id="tb-align-right" title="Derecha">➡</button>';
-
-                // Listeners
-                formatRow.querySelector('#tb-bold').onclick = () => {
-                  const nextVal = (activeTarget.style.fontWeight === 'bold' || activeTarget.style.fontWeight === '700') ? 'normal' : 'bold';
-                  activeTarget.style.fontWeight = nextVal;
-                  window.parent.postMessage({ type: 'UPDATE_PROPERTIES', id, properties: { fontWeight: nextVal } }, '*');
-                  updateToolbar();
-                };
-                formatRow.querySelector('#tb-italic').onclick = () => {
-                  const nextVal = activeTarget.style.fontStyle === 'italic' ? 'normal' : 'italic';
-                  activeTarget.style.fontStyle = nextVal;
-                  window.parent.postMessage({ type: 'UPDATE_PROPERTIES', id, properties: { fontStyle: nextVal } }, '*');
-                  updateToolbar();
-                };
-                formatRow.querySelector('#tb-underline').onclick = () => {
-                  const nextVal = activeTarget.style.textDecoration.includes('underline') ? 'none' : 'underline';
-                  activeTarget.style.textDecoration = nextVal;
-                  window.parent.postMessage({ type: 'UPDATE_PROPERTIES', id, properties: { textDecoration: nextVal } }, '*');
-                  updateToolbar();
-                };
-                formatRow.querySelector('#tb-font-family').onchange = (e) => {
-                  const nextVal = e.target.value;
-                  activeTarget.style.fontFamily = nextVal;
-                  window.parent.postMessage({ type: 'UPDATE_PROPERTIES', id, properties: { fontFamily: nextVal } }, '*');
-                };
-                formatRow.querySelector('#tb-font-size').onchange = (e) => {
-                  const nextVal = e.target.value;
-                  activeTarget.style.fontSize = nextVal;
-                  window.parent.postMessage({ type: 'UPDATE_PROPERTIES', id, properties: { fontSize: nextVal } }, '*');
-                };
-                formatRow.querySelector('#tb-align-left').onclick = () => {
-                  activeTarget.style.textAlign = 'left';
-                  window.parent.postMessage({ type: 'UPDATE_PROPERTIES', id, properties: { align: 'left' } }, '*');
-                  updateToolbar();
-                };
-                formatRow.querySelector('#tb-align-center').onclick = () => {
-                  activeTarget.style.textAlign = 'center';
-                  window.parent.postMessage({ type: 'UPDATE_PROPERTIES', id, properties: { align: 'center' } }, '*');
-                  updateToolbar();
-                };
-                formatRow.querySelector('#tb-align-right').onclick = () => {
-                  activeTarget.style.textAlign = 'right';
-                  window.parent.postMessage({ type: 'UPDATE_PROPERTIES', id, properties: { align: 'right' } }, '*');
-                  updateToolbar();
-                };
-              }
-            } else {
-              if (formatRow) {
-                formatRow.remove();
-              }
             }
           } else {
             toolbar.style.display = 'none';
